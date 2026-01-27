@@ -1,70 +1,117 @@
 <!doctype html>
-</select>
-<button id="btnUser">ユーザー作成</button>
-</div>
-<hr />
-<div class="row">
-<input id="ptitle" class="grow" placeholder="案件名" />
-<input id="pdesc" class="grow" placeholder="説明" />
-<button id="btnProject">案件作成</button>
-</div>
-<hr />
-<button class="ghost" id="btnExport">全データJSON書き出し</button>
-<details style="margin-top:10px;">
-<summary>デバッグ（JSONストア）</summary>
-<pre id="debug"></pre>
-</details>
-</section>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stage Ethics & Rights (GitHub Pages)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <h1>Stage Ethics & Rights</h1>
+    <p class="sub">GitHubだけで動く（静的）デモ：台本/演出メモ→論点抽出→ログ保存</p>
+  </header>
 
+  <main class="wrap grid">
+    <section class="card">
+      <h2>① 台本 / 演出メモ（入力）</h2>
+      <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。"></textarea>
 
-<!-- 入力 -->
-<section class="card">
-<h2>① 入力</h2>
-<textarea id="inputText"></textarea>
-<div class="row">
-<button id="analyzeBtn">解析</button>
-<button class="ghost" id="clearBtn">消去</button>
-</div>
-<h3>論点</h3>
-<ul id="issuesList" class="issues"></ul>
-</section>
+      <div class="row">
+        <button id="analyzeBtn">解析する</button>
+        <button class="ghost" id="clearBtn">入力を消す</button>
+      </div>
 
+      <h3>② 抽出された論点（候補）</h3>
+      <ul id="issuesList" class="issues"></ul>
 
-<!-- 案件＋ログ -->
-<section class="card">
-<h2>③ 案件</h2>
-<div class="row">
-<input id="projectTitle" class="grow" placeholder="案件名" />
-<button id="createProjectBtn">作成</button>
-</div>
-<div class="row">
-<select id="projectSelect" class="grow"></select>
-<button class="ghost" id="deleteProjectBtn">削除</button>
-</div>
+      <div class="hint">
+        ※AIではなく「ルールベース（キーワード）」で論点を出します。後からAIに置き換え可能。
+      </div>
+    </section>
 
+    <section class="card">
+      <h2>③ 案件（Project）</h2>
 
-<h2>④ 合意形成ログ</h2>
-<select id="logElement"><option>脚本</option><option>演出</option><option>音楽</option><option>照明</option><option>映像</option><option>全体</option></select>
-<select id="logCategory"><option>copyright</option><option>privacy</option><option>ethics</option><option>safety</option><option>bias</option></select>
-<textarea id="logIssue"></textarea>
-<select id="logDecision"><option>要確認</option><option>採用</option><option>却下</option><option>保留</option></select>
-<input id="logRationale" placeholder="理由" />
+      <div class="row">
+        <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
+        <button id="createProjectBtn">作成</button>
+      </div>
 
+      <div class="row">
+        <select id="projectSelect" class="grow"></select>
+        <button class="ghost" id="deleteProjectBtn">案件削除</button>
+      </div>
 
-<div class="row">
-<button id="addLogBtn">ログ追加</button>
-<button class="ghost" id="exportBtn">案件JSON</button>
-<button class="ghost" id="clearLogsBtn">ログ全削除</button>
-</div>
+      <hr />
 
+      <h2>④ ログ（合意形成ログ）</h2>
 
-<div id="logsTable" class="table"></div>
-</section>
+      <div class="grid2">
+        <div>
+          <label>要素</label>
+          <select id="logElement">
+            <option>脚本</option>
+            <option>演出</option>
+            <option>音楽</option>
+            <option>照明</option>
+            <option>美術</option>
+            <option>衣装</option>
+            <option>映像</option>
+            <option>SNS</option>
+            <option>全体</option>
+          </select>
+        </div>
+        <div>
+          <label>カテゴリ</label>
+          <select id="logCategory">
+            <option value="copyright">copyright</option>
+            <option value="privacy">privacy</option>
+            <option value="ethics">ethics</option>
+            <option value="safety">safety</option>
+            <option value="bias">bias</option>
+          </select>
+        </div>
+      </div>
 
+      <label style="margin-top:10px;">論点（issue）</label>
+      <textarea id="logIssue" placeholder="例：配信/収録の権利範囲を上演と分けて確認する"></textarea>
 
-</main>
+      <div class="grid2" style="margin-top:10px;">
+        <div>
+          <label>判断</label>
+          <select id="logDecision">
+            <option>要確認</option>
+            <option>採用</option>
+            <option>却下</option>
+            <option>保留</option>
+          </select>
+        </div>
+        <div>
+          <label>理由（任意）</label>
+          <input id="logRationale" placeholder="判断理由（責任ログ）" />
+        </div>
+      </div>
 
+      <div class="row" style="margin-top:12px;">
+        <button id="addLogBtn">ログ追加</button>
+        <button class="ghost" id="exportBtn">JSON書き出し</button>
+        <button class="ghost" id="clearLogsBtn">ログ全削除</button>
+      </div>
 
-<script type="module" src="./app.js"></script>
+      <h3 style="margin-top:14px;">ログ一覧</h3>
+      <div id="logsTable" class="table"></div>
+
+      <div class="hint">
+        ※保存先はブラウザ内（LocalStorage）です。別PC・別ブラウザでは共有されません。
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <small>© Stage Ethics Demo / GitHub Pages only</small>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
