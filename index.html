@@ -13,6 +13,52 @@
   </header>
 
   <main class="wrap grid">
+    <!-- ✅ 追加：ユーザー＆全体JSON操作（新カード） -->
+    <section class="card">
+      <h2>0) ユーザー / データ操作（JSONストア）</h2>
+
+      <h3>ユーザー</h3>
+      <div class="row">
+        <input id="uname" class="grow" placeholder="名前" />
+        <input id="uemail" class="grow" placeholder="メール（任意）" />
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <select id="urole" class="grow">
+          <option value="admin">admin</option>
+          <option value="editor" selected>editor</option>
+          <option value="viewer">viewer</option>
+        </select>
+        <button id="btnUser">ユーザー作成</button>
+      </div>
+
+      <hr />
+
+      <h3>案件（別UIでも作れる）</h3>
+      <div class="row">
+        <input id="ptitle" class="grow" placeholder="案件名" />
+        <input id="pdesc" class="grow" placeholder="説明（任意）" />
+        <button id="btnProject">案件作成</button>
+      </div>
+
+      <hr />
+
+      <h3>データ操作</h3>
+      <div class="row">
+        <button class="ghost" id="btnExport">全データJSON書き出し</button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary>デバッグ表示（store）</summary>
+        <pre id="debug" style="white-space:pre-wrap; font-size:12px; overflow:auto;"></pre>
+      </details>
+
+      <div class="hint">
+        ※この欄は「全体のJSONストア」を操作します。案件別の書き出しは下の「JSON書き出し」ボタンです。
+      </div>
+    </section>
+
+    <!-- 既存カード：入力→解析 -->
     <section class="card">
       <h2>① 台本 / 演出メモ（入力）</h2>
       <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。"></textarea>
@@ -30,6 +76,7 @@
       </div>
     </section>
 
+    <!-- 既存カード：案件＋ログ -->
     <section class="card">
       <h2>③ 案件（Project）</h2>
 
@@ -95,7 +142,7 @@
 
       <div class="row" style="margin-top:12px;">
         <button id="addLogBtn">ログ追加</button>
-        <button class="ghost" id="exportBtn">JSON書き出し</button>
+        <button class="ghost" id="exportBtn">JSON書き出し（この案件）</button>
         <button class="ghost" id="clearLogsBtn">ログ全削除</button>
       </div>
 
@@ -112,6 +159,7 @@
     <small>© Stage Ethics Demo / GitHub Pages only</small>
   </footer>
 
-  <script src="app.js"></script>
+  <!-- ✅ 重要：importを使うので module にする -->
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
