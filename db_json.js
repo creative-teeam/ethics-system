@@ -1,38 +1,99 @@
+// db_json.js
 import { uuid, nowISO, addAudit } from "./storage.js";
 
-
-export function createUser(store,{display_name,email,role}){
-const u={ user_id:uuid(), display_name, email, role, created_at:nowISO(), last_login:null };
-store.users.push(u);
-addAudit(store,{entity_type:"user",entity_id:u.user_id,action:"create",actor_user_id:u.user_id,before_json:null,after_json:u});
-return u;
+export function createUser(store, { display_name, email, role }) {
+  const u = {
+    user_id: uuid(),
+    display_name: display_name ?? null,
+    email: email ?? null,
+    role: role ?? "editor",
+    created_at: nowISO(),
+    last_login: null
+  };
+  store.users.push(u);
+  addAudit(store, {
+    entity_type: "user",
+    entity_id: u.user_id,
+    action: "create",
+    actor_user_id: u.user_id,
+    before_json: null,
+    after_json: u
+  });
+  return u;
 }
 
-
-export function createProject(store,{title,description,owner_user_id,status}){
-const p={ project_id:uuid(), title, description, owner_user_id, status, created_at:nowISO(), updated_at:nowISO() };
-store.projects.push(p);
-addAudit(store,{entity_type:"project",entity_id:p.project_id,action:"create",actor_user_id:owner_user_id,before_json:null,after_json:p});
-return p;
+export function createProject(store, { title, description, owner_user_id, status }) {
+  const p = {
+    project_id: uuid(),
+    title: title ?? "無題案件",
+    description: description ?? null,
+    owner_user_id,
+    status: status ?? "draft",
+    created_at: nowISO(),
+    updated_at: nowISO()
+  };
+  store.projects.push(p);
+  addAudit(store, {
+    entity_type: "project",
+    entity_id: p.project_id,
+    action: "create",
+    actor_user_id: owner_user_id ?? "system",
+    before_json: null,
+    after_json: p
+  });
+  return p;
 }
 
-
-export function addInput(store,data){
-const i={ input_id:uuid(), ...data, created_at:nowISO() };
-store.inputs.push(i);
-return i;
+export function addInput(store, data) {
+  const i = {
+    input_id: uuid(),
+    ...data,
+    created_at: nowISO()
+  };
+  store.inputs.push(i);
+  addAudit(store, {
+    entity_type: "input",
+    entity_id: i.input_id,
+    action: "create",
+    actor_user_id: data.created_by ?? "unknown",
+    before_json: null,
+    after_json: i
+  });
+  return i;
 }
 
-
-export function addIssue(store,data){
-const iss={ issue_id:uuid(), ...data, created_at:nowISO() };
-store.issues.push(iss);
-return iss;
+export function addIssue(store, data) {
+  const iss = {
+    issue_id: uuid(),
+    ...data,
+    created_at: nowISO()
+  };
+  store.issues.push(iss);
+  addAudit(store, {
+    entity_type: "issue",
+    entity_id: iss.issue_id,
+    action: "create",
+    actor_user_id: "system",
+    before_json: null,
+    after_json: iss
+  });
+  return iss;
 }
 
-
-export function addDecision(store,data){
-const d={ decision_id:uuid(), ...data, decided_at:nowISO() };
-store.decisions.push(d);
-return d;
+export function addDecision(store, data) {
+  const d = {
+    decision_id: uuid(),
+    ...data,
+    decided_at: nowISO()
+  };
+  store.decisions.push(d);
+  addAudit(store, {
+    entity_type: "decision",
+    entity_id: d.decision_id,
+    action: "create",
+    actor_user_id: data.decided_by ?? "unknown",
+    before_json: null,
+    after_json: d
+  });
+  return d;
 }
