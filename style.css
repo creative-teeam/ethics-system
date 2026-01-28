@@ -1,97 +1,128 @@
-/* =========================
-   Base
-========================= */
-* {
-  box-sizing: border-box;
-  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-}
+/* ============================
+   style.css（全文）
+   権利処理・管理システム 用
+   - 削除系ボタン：赤
+   - 進捗メーター：緑
+   - 背景：淡い紫系
+   ============================ */
 
+/* ---- Reset-ish ---- */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
 body {
-  margin: 0;
-  background: #f4f6fb;
-  color: #1a1a2e;
+  margin: 0 !important;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif !important;
+  line-height: 1.6 !important;
+
+  /* ✅ 背景（淡い紫） */
+  background: #f4f0ff !important;
+  color: #1a1a2e !important;
 }
 
+/* ---- Layout ---- */
 .wrap {
-  max-width: 1200px;
-  margin: auto;
-  padding: 16px;
+  width: min(1100px, 92vw);
+  margin: 0 auto;
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  padding: 16px 0 40px;
 }
 
-.card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 18px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Header ---- */
+header.wrap {
+  padding: 20px 0 8px;
 }
 
 h1 {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 28px;
+  letter-spacing: 0.02em;
+  color: #121226 !important;
 }
 
 .sub {
-  margin-top: 6px;
-  color: #555;
+  margin: 0 !important;
   font-size: 14px;
+  color: #303050 !important;   /* ✅ サブタイトルを見やすく */
+  opacity: 1 !important;       /* ✅ “消えた”対策 */
 }
 
-/* =========================
-   Header / Footer
-========================= */
-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e8f0;
+/* ---- Cards ---- */
+.card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(60, 40, 120, 0.12) !important;
+  border-radius: 14px !important;
+  padding: 16px !important;
+  box-shadow: 0 8px 18px rgba(25, 10, 60, 0.08) !important;
 }
 
-footer {
-  margin-top: 40px;
-  padding: 20px 0;
-  text-align: center;
-  color: #666;
+hr {
+  border: none;
+  border-top: 1px solid rgba(60, 40, 120, 0.12);
+  margin: 14px 0;
 }
 
-/* =========================
-   Layout helpers
-========================= */
+h2, h3 {
+  margin: 0 0 10px;
+  color: #121226 !important;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: #1f1f3a !important;
+  margin: 6px 0 4px;
+}
+
+/* ---- Rows / Grids ---- */
 .row {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
-.grow {
-  flex: 1;
-}
+.grow { flex: 1; }
 
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
+}
+@media (max-width: 700px) {
+  .grid2 { grid-template-columns: 1fr; }
 }
 
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .grid4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .grid4 { grid-template-columns: 1fr; }
 }
 
-/* =========================
-   Inputs
-========================= */
+/* ---- Inputs ---- */
 input, textarea, select {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d0d6e6;
-  background: #fdfdff;
-  font-size: 14px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid rgba(60, 40, 120, 0.18);
+  background: rgba(255, 255, 255, 0.95);
+  color: #111122 !important;
+  outline: none;
 }
 
 textarea {
@@ -99,80 +130,84 @@ textarea {
   resize: vertical;
 }
 
-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  display: block;
+input::placeholder, textarea::placeholder {
+  color: #55557a !important;
+  opacity: 1 !important;
 }
 
-/* =========================
-   Buttons
-========================= */
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(80, 50, 170, 0.45);
+  box-shadow: 0 0 0 4px rgba(90, 60, 190, 0.12);
+}
+
+/* ---- Check labels ---- */
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  color: #1f1f3a !important;
+}
+.check input { width: auto; }
+
+/* ---- Buttons ---- */
 button {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #ccd2e3;
-  background: #ffffff;
   cursor: pointer;
+  border: 1px solid rgba(60, 40, 120, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #3b2fb8;
+  color: #fff !important;
   font-weight: 600;
-  transition: all 0.2s ease;
 }
 
-button:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  transform: translateY(-1px);
-}
+button:hover { filter: brightness(1.05); }
+button:active { transform: translateY(1px); }
 
+/* “ghost” は基本：白ベース（ただし削除系は別で赤に上書き） */
 button.ghost {
-  background: #f7f9ff;
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: #1a1a2e !important;
+  border: 1px solid rgba(60, 40, 120, 0.22) !important;
 }
 
-/* =========================
-   🔴 赤ボタン（削除・リセット系）
-========================= */
-
-/* 削除系 */
-#clearLogsBtn,
+/* ✅ 削除系ボタンを赤にする（指定された3つも赤） */
 #deleteProjectBtn,
-button[data-del],
-.btnDelDate {
-  background: rgba(255, 0, 0, 0.10);
-  border: 1px solid rgba(200, 0, 0, 0.45);
-  color: #a00000;
-  font-weight: 700;
-}
-
-#clearLogsBtn:hover,
-#deleteProjectBtn:hover,
-button[data-del]:hover,
-.btnDelDate:hover {
-  background: rgba(255, 0, 0, 0.22);
-  color: #7a0000;
-  box-shadow: 0 6px 18px rgba(200, 0, 0, 0.35);
-}
-
-/* リセット系 */
-#f_reset,
+#clearLogsBtn,
 #clearBtn,
-#btnResetTemplate {
-  background: rgba(255, 0, 0, 0.08);
-  border: 1px solid rgba(180, 0, 0, 0.35);
-  color: #a00000;
-  font-weight: 700;
+#btnResetTemplate,
+#f_reset,
+.btnDelDate {
+  background: #d7263d !important;
+  border-color: #b91d31 !important;
+  color: #fff !important;
 }
 
-#f_reset:hover,
+/* 削除系の hover */
+#deleteProjectBtn:hover,
+#clearLogsBtn:hover,
 #clearBtn:hover,
-#btnResetTemplate:hover {
-  background: rgba(255, 0, 0, 0.20);
-  color: #7a0000;
-  box-shadow: 0 6px 16px rgba(200, 0, 0, 0.30);
+#btnResetTemplate:hover,
+#f_reset:hover,
+.btnDelDate:hover {
+  filter: brightness(1.07);
 }
 
-/* =========================
-   KPI Dashboard
-========================= */
+/* 期間削除ボタン（×）は小さめに */
+.btnDelDate {
+  padding: 8px 10px !important;
+  min-width: 40px;
+}
+
+/* ---- Hint ---- */
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #303050 !important;
+  opacity: 1 !important;
+}
+
+/* ---- KPI / Dashboard ---- */
 .dash {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -181,129 +216,155 @@ button[data-del]:hover,
 }
 
 .kpi {
-  background: #f7f9ff;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(60, 40, 120, 0.12);
   border-radius: 12px;
-  padding: 12px;
-  text-align: center;
-  border: 1px solid #e1e6f5;
+  padding: 10px 12px;
 }
 
 .kpi .k {
   font-size: 12px;
-  color: #666;
+  color: #303050 !important;
 }
-
 .kpi .v {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
+  color: #121226 !important;
+  margin-top: 2px;
 }
 
-/* =========================
-   🟢 Progress bar (緑)
-========================= */
-.progressWrap {
-  margin-top: 12px;
-}
-
+/* ---- Progress ---- */
+.progressWrap { margin-top: 12px; }
 .progressLabel {
   font-size: 12px;
+  color: #303050 !important;
   margin-bottom: 6px;
-  color: #444;
 }
 
 .progressBar {
-  width: 100%;
-  height: 14px;
-  border-radius: 10px;
-  background: rgba(0, 150, 0, 0.12);
-  border: 1px solid rgba(0, 120, 0, 0.25);
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  border: 1px solid rgba(60, 40, 120, 0.10);
 }
 
+/* ✅ 進捗メーター（緑） */
 .progressFill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #2ecc71, #27ae60);
-  transition: width 0.4s ease;
+  background: #25a244 !important;
+  border-radius: 999px;
+  transition: width 200ms ease;
 }
 
-/* =========================
-   Tags / Lists
-========================= */
-.tag {
-  display: inline-block;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  background: #eef2ff;
-  border: 1px solid #dbe2ff;
-  margin-right: 4px;
+/* ---- Issues list ---- */
+.issues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .issues li {
-  background: #f9fbff;
-  border: 1px solid #e2e7f5;
-  border-radius: 10px;
+  border: 1px solid rgba(60, 40, 120, 0.12);
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 12px;
   padding: 12px;
-  margin-bottom: 8px;
-  list-style: none;
+  margin: 10px 0;
 }
 
-/* =========================
-   Table
-========================= */
+/* Tags */
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(70, 45, 170, 0.10);
+  color: #1a1a2e !important;
+  font-weight: 700;
+  margin-right: 6px;
+}
+
+/* ---- details ---- */
+details summary {
+  cursor: pointer;
+  color: #1a1a2e !important;
+  font-weight: 700;
+}
+
+.bullets {
+  margin: 8px 0 0 18px;
+  color: #1a1a2e !important;
+}
+
+/* ---- Table (logs) ---- */
 .table {
   margin-top: 10px;
-  border: 1px solid #e2e7f5;
+  border: 1px solid rgba(60, 40, 120, 0.12);
   border-radius: 12px;
   overflow: hidden;
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .rowh, .rowd {
   display: grid;
-  grid-template-columns: 1.5fr 3fr 1fr 1fr 1.5fr 0.7fr;
+  grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1fr 70px;
+  gap: 0;
+}
+
+@media (max-width: 900px) {
+  .rowh, .rowd { grid-template-columns: 1fr; }
 }
 
 .rowh {
-  background: #f0f3ff;
-  font-weight: 700;
-}
-
-.rowd:nth-child(even) {
-  background: #fafbff;
+  background: rgba(70, 45, 170, 0.10);
+  font-weight: 800;
 }
 
 .cell {
-  padding: 10px;
-  border-bottom: 1px solid #e6ebf7;
-  font-size: 13px;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(60, 40, 120, 0.10);
+  color: #111122 !important;
 }
 
-/* =========================
-   Date rows
-========================= */
+.rowd:last-child .cell { border-bottom: none; }
+
+/* links */
+a { color: #2d2db3; }
+a:visited { color: #5a2db3; }
+
+/* ---- Multi date rows ---- */
 .dateRows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .dateRow {
   display: flex;
+  gap: 8px;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dateRow .f_from,
+.dateRow .f_to {
+  width: 180px;
+  max-width: 100%;
 }
 
 .dateSep {
+  color: #303050 !important;
   font-weight: 700;
-  color: #666;
 }
 
-/* =========================
-   Hints
-========================= */
-.hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #666;
+/* ---- Footer ---- */
+.foot {
+  padding: 18px 0 30px;
+  color: #303050 !important;
+}
+.foot small {
+  color: #303050 !important;
+  opacity: 1 !important;
 }
