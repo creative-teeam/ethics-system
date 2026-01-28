@@ -363,6 +363,13 @@ a:visited { color: #5a2db3; }
 .foot {
   padding: 18px 0 30px;
   color: #303050 !important;
+   html, body {
+  background: #f4f0ff !important;
+}
+body {
+  background: #f4f0ff !important;
+}
+
 }
 .foot small {
   color: #303050 !important;
