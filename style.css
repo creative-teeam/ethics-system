@@ -1,377 +1,357 @@
-/* ============================
-   style.css（全文）
-   権利処理・管理システム 用
-   - 削除系ボタン：赤
-   - 進捗メーター：緑
-   - 背景：淡い紫系
-   ============================ */
-
-/* ---- Reset-ish ---- */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin: 0 !important;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif !important;
-  line-height: 1.6 !important;
-
-  /* ✅ 背景（淡い紫） */
-  background: #f4f0ff !important;
-  color: #1a1a2e !important;
+/* ===============================
+   Base Reset
+=============================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
 }
 
-/* ---- Layout ---- */
+/* ===============================
+   Background
+=============================== */
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background: #f3efff;   /* ← 淡い紫 */
+  color: #1a1a2e;
+}
+
+/* ===============================
+   Layout
+=============================== */
 .wrap {
-  width: min(1100px, 92vw);
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 16px 0 40px;
+  gap: 20px;
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-}
-
-/* ---- Header ---- */
-header.wrap {
-  padding: 20px 0 8px;
+/* ===============================
+   Header / Footer
+=============================== */
+header {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 h1 {
-  margin: 0 0 6px;
-  font-size: 28px;
-  letter-spacing: 0.02em;
-  color: #121226 !important;
+  font-size: 2rem;
+  color: #1a1a2e;
 }
 
 .sub {
-  margin: 0 !important;
-  font-size: 14px;
-  color: #303050 !important;   /* ✅ サブタイトルを見やすく */
-  opacity: 1 !important;       /* ✅ “消えた”対策 */
+  margin-top: 6px;
+  color: #4a4a7a;
+  font-size: 0.95rem;
 }
 
-/* ---- Cards ---- */
+footer {
+  text-align: center;
+  margin-top: 40px;
+  color: #666;
+}
+
+/* ===============================
+   Cards
+=============================== */
 .card {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(60, 40, 120, 0.12) !important;
-  border-radius: 14px !important;
-  padding: 16px !important;
-  box-shadow: 0 8px 18px rgba(25, 10, 60, 0.08) !important;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
-hr {
-  border: none;
-  border-top: 1px solid rgba(60, 40, 120, 0.12);
-  margin: 14px 0;
+/* ===============================
+   Headings
+=============================== */
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #22224a;
 }
 
-h2, h3 {
-  margin: 0 0 10px;
-  color: #121226 !important;
+h3 {
+  font-size: 1.05rem;
+  margin: 12px 0 8px;
+  color: #33335a;
 }
 
-label {
-  display: block;
-  font-size: 13px;
-  color: #1f1f3a !important;
-  margin: 6px 0 4px;
+/* ===============================
+   Inputs
+=============================== */
+input, textarea, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  background: #fafaff;
+  color: #111;
 }
 
-/* ---- Rows / Grids ---- */
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #7777aa;
+}
+
+/* ===============================
+   Rows & Grids
+=============================== */
 .row {
   display: flex;
   gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
   margin-top: 10px;
+  align-items: center;
 }
-
-.grow { flex: 1; }
 
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 700px) {
-  .grid2 { grid-template-columns: 1fr; }
+  gap: 10px;
 }
 
 .grid4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-@media (max-width: 900px) {
-  .grid4 { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 560px) {
-  .grid4 { grid-template-columns: 1fr; }
+  gap: 10px;
 }
 
-/* ---- Inputs ---- */
-input, textarea, select {
-  width: 100%;
-  padding: 10px 11px;
-  border-radius: 10px;
-  border: 1px solid rgba(60, 40, 120, 0.18);
-  background: rgba(255, 255, 255, 0.95);
-  color: #111122 !important;
-  outline: none;
-}
-
-textarea {
-  min-height: 120px;
-  resize: vertical;
-}
-
-input::placeholder, textarea::placeholder {
-  color: #55557a !important;
-  opacity: 1 !important;
-}
-
-input:focus, textarea:focus, select:focus {
-  border-color: rgba(80, 50, 170, 0.45);
-  box-shadow: 0 0 0 4px rgba(90, 60, 190, 0.12);
-}
-
-/* ---- Check labels ---- */
-.check {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 6px 0;
-  color: #1f1f3a !important;
-}
-.check input { width: auto; }
-
-/* ---- Buttons ---- */
+/* ===============================
+   Buttons
+=============================== */
 button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
-  border: 1px solid rgba(60, 40, 120, 0.18);
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #3b2fb8;
-  color: #fff !important;
-  font-weight: 600;
+  font-size: 0.9rem;
+  background: #4b5cff;   /* 通常ボタン（青） */
+  color: #fff;
+  transition: 0.2s;
 }
 
-button:hover { filter: brightness(1.05); }
-button:active { transform: translateY(1px); }
+button:hover {
+  opacity: 0.9;
+}
 
-/* “ghost” は基本：白ベース（ただし削除系は別で赤に上書き） */
+/* ghost = サブボタン */
 button.ghost {
-  background: rgba(255, 255, 255, 0.88) !important;
-  color: #1a1a2e !important;
-  border: 1px solid rgba(60, 40, 120, 0.22) !important;
+  background: #eaeaff;
+  color: #333;
+  border: 1px solid #cfcfff;
 }
 
-/* ✅ 削除系ボタンを赤にする（指定された3つも赤） */
+/* ===============================
+   Red buttons (削除・リセット系)
+=============================== */
 #deleteProjectBtn,
 #clearLogsBtn,
 #clearBtn,
 #btnResetTemplate,
 #f_reset,
 .btnDelDate {
-  background: #d7263d !important;
-  border-color: #b91d31 !important;
+  background: #e74c3c !important;
   color: #fff !important;
+  border: none !important;
 }
 
-/* 削除系の hover */
 #deleteProjectBtn:hover,
 #clearLogsBtn:hover,
 #clearBtn:hover,
 #btnResetTemplate:hover,
 #f_reset:hover,
 .btnDelDate:hover {
-  filter: brightness(1.07);
+  background: #c0392b !important;
 }
 
-/* 期間削除ボタン（×）は小さめに */
-.btnDelDate {
-  padding: 8px 10px !important;
-  min-width: 40px;
-}
-
-/* ---- Hint ---- */
-.hint {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #303050 !important;
-  opacity: 1 !important;
-}
-
-/* ---- KPI / Dashboard ---- */
-.dash {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+/* ===============================
+   Progress
+=============================== */
+.progressWrap {
   margin-top: 10px;
 }
 
-.kpi {
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(60, 40, 120, 0.12);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-
-.kpi .k {
-  font-size: 12px;
-  color: #303050 !important;
-}
-.kpi .v {
-  font-size: 22px;
-  font-weight: 800;
-  color: #121226 !important;
-  margin-top: 2px;
-}
-
-/* ---- Progress ---- */
-.progressWrap { margin-top: 12px; }
 .progressLabel {
-  font-size: 12px;
-  color: #303050 !important;
+  font-size: 0.9rem;
   margin-bottom: 6px;
 }
 
 .progressBar {
-  height: 12px;
+  width: 100%;
+  height: 10px;
+  background: #e0e0e0;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  border: 1px solid rgba(60, 40, 120, 0.10);
 }
 
-/* ✅ 進捗メーター（緑） */
 .progressFill {
   height: 100%;
-  width: 0%;
-  background: #25a244 !important;
-  border-radius: 999px;
-  transition: width 200ms ease;
+  background: #2ecc71;  /* ← 進捗メーター 緑 */
+  transition: width 0.3s;
 }
 
-/* ---- Issues list ---- */
-.issues {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.issues li {
-  border: 1px solid rgba(60, 40, 120, 0.12);
-  background: rgba(255, 255, 255, 0.65);
-  border-radius: 12px;
-  padding: 12px;
+/* ===============================
+   Dashboard
+=============================== */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin: 10px 0;
 }
 
-/* Tags */
-.tag {
-  display: inline-block;
-  font-size: 12px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(70, 45, 170, 0.10);
-  color: #1a1a2e !important;
-  font-weight: 700;
-  margin-right: 6px;
+.kpi {
+  background: #f7f7ff;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
 }
 
-/* ---- details ---- */
-details summary {
-  cursor: pointer;
-  color: #1a1a2e !important;
-  font-weight: 700;
+.kpi .k {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.kpi .v {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ===============================
+   Tags
+=============================== */
+.tag {
+  display: inline-block;
+  background: #eef;
+  color: #333;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  margin-right: 4px;
+}
+
+/* ===============================
+   Lists
+=============================== */
+.issues {
+  list-style: none;
+  margin-top: 10px;
+}
+
+.issues li {
+  background: #f8f8ff;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #e0e0ff;
 }
 
 .bullets {
-  margin: 8px 0 0 18px;
-  color: #1a1a2e !important;
+  padding-left: 20px;
 }
 
-/* ---- Table (logs) ---- */
+.bullets li {
+  margin-bottom: 6px;
+}
+
+/* ===============================
+   Tables (logs)
+=============================== */
 .table {
   margin-top: 10px;
-  border: 1px solid rgba(60, 40, 120, 0.12);
-  border-radius: 12px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.75);
+  display: grid;
+  gap: 6px;
 }
 
 .rowh, .rowd {
   display: grid;
-  grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1fr 70px;
-  gap: 0;
-}
-
-@media (max-width: 900px) {
-  .rowh, .rowd { grid-template-columns: 1fr; }
+  grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 0.5fr;
+  gap: 6px;
 }
 
 .rowh {
-  background: rgba(70, 45, 170, 0.10);
-  font-weight: 800;
+  font-weight: bold;
+  color: #444;
+}
+
+.rowd {
+  background: #fafaff;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #e0e0ff;
 }
 
 .cell {
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(60, 40, 120, 0.10);
-  color: #111122 !important;
+  font-size: 0.85rem;
+  color: #222;
 }
 
-.rowd:last-child .cell { border-bottom: none; }
+/* ===============================
+   Filters
+=============================== */
+.filters {
+  background: #f8f8ff;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e0e0ff;
+}
 
-/* links */
-a { color: #2d2db3; }
-a:visited { color: #5a2db3; }
-
-/* ---- Multi date rows ---- */
+/* ===============================
+   Date Rows
+=============================== */
 .dateRows {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .dateRow {
   display: flex;
-  gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
-}
-
-.dateRow .f_from,
-.dateRow .f_to {
-  width: 180px;
-  max-width: 100%;
+  gap: 6px;
 }
 
 .dateSep {
-  color: #303050 !important;
-  font-weight: 700;
+  color: #666;
 }
 
-/* ---- Footer ---- */
-.foot {
-  padding: 18px 0 30px;
-  color: #303050 !important;
-   html, body {
-  background: #f4f0ff !important;
-}
-body {
-  background: #f4f0ff !important;
+/* ===============================
+   Misc
+=============================== */
+.hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 6px;
 }
 
+.check {
+  font-size: 0.9rem;
+  color: #333;
 }
-.foot small {
-  color: #303050 !important;
-  opacity: 1 !important;
+
+/* ===============================
+   Responsive
+=============================== */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rowh, .rowd {
+    grid-template-columns: 1fr;
+  }
 }
