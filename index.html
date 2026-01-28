@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>権利処理・管理システム (GitHub Pages)</title>
+  <title>Stage Ethics & Rights (GitHub Pages)</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="wrap">
-    <h1>権利処理・管理システム</h1>
+    <h1>Stage Ethics & Rights</h1>
     <p class="sub"></p>
   </header>
 
@@ -53,8 +53,8 @@
       <input id="t_shoot_range" placeholder="例：客席は映さない、舞台上のみ、終演後の挨拶だけ など" />
 
       <div class="row">
-        <button id="btnApplyTemplate">テンプレを入力欄に反映</button>
-        <button class="ghost" id="btnResetTemplate">テンプレをリセット</button>
+        <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
+        <button type="button" class="ghost" id="btnResetTemplate">テンプレをリセット</button>
       </div>
 
       <div class="hint">
@@ -68,8 +68,8 @@
       <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。"></textarea>
 
       <div class="row">
-        <button id="analyzeBtn">解析する</button>
-        <button class="ghost" id="clearBtn">入力を消す</button>
+        <button type="button" id="analyzeBtn">解析する</button>
+        <button type="button" class="ghost" id="clearBtn">入力を消す</button>
       </div>
 
       <h3>② 抽出された論点（候補）</h3>
@@ -101,12 +101,12 @@
 
       <div class="row">
         <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
-        <button id="createProjectBtn">作成</button>
+        <button type="button" id="createProjectBtn">作成</button>
       </div>
 
       <div class="row">
         <select id="projectSelect" class="grow"></select>
-        <button class="ghost" id="deleteProjectBtn">案件削除</button>
+        <button type="button" class="ghost" id="deleteProjectBtn">案件削除</button>
       </div>
 
       <hr />
@@ -240,8 +240,8 @@
       </div>
 
       <div class="row" style="margin-top:12px;">
-        <button id="addLogBtn">ログ追加</button>
-        <button class="ghost" id="clearLogsBtn">ログ全削除</button>
+        <button type="button" id="addLogBtn">ログ追加</button>
+        <button type="button" class="ghost" id="clearLogsBtn">ログ全削除</button>
       </div>
 
       <h3 style="margin-top:14px;">ログ一覧</h3>
@@ -257,6 +257,7 @@
     <small>© Stage Ethics Demo / GitHub Pages only</small>
   </footer>
 
+  <!-- ※キャッシュ回避したいなら ?v= 付けてOK -->
   <script src="app.js"></script>
 </body>
 </html>
