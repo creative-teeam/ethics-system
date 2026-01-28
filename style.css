@@ -1,57 +1,297 @@
-/* ===== 文字色のみ調整（背景は変更しない） ===== */
+:root {
+  --b: #d8d2e8;          /* ボーダー：薄紫グレー */
+  --bg: #f4f1fb;         /* 背景：淡い紫 */
+  --card: #ffffff;       /* カード背景：白 */
+  --text: #1f1a2b;       /* 文字：濃い紫寄りの黒 */
+  --subtext: #4a3f66;    /* サブ文字 */
+  --accent: #6b5fd6;     /* アクセント紫 */
+  --accent-soft: #e7e3ff;/* 淡いアクセント */
+}
 
-/* 全体文字 */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  color: #1e1e2f !important;   /* 濃いネイビーパープル */
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, #f6f3ff 0%, #f2eefb 100%);
 }
 
-/* 見出し */
-h1, h2, h3, h4, h5, h6 {
-  color: #151526 !important;   /* さらに濃く */
+/* ===== Layout ===== */
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px;
 }
 
-/* 通常テキスト */
-p, span, div, li, label, small {
-  color: #24243a !important;
+h1 {
+  margin: 6px 0 0;
+  font-size: 28px;
+  color: #2a1f55;
 }
 
-/* サブ説明・ヒント */
-.sub, .hint {
-  color: #3a3a5a !important;
+.sub {
+  margin: 8px 0 0;
+  color: var(--subtext);
 }
 
-/* 入力欄の文字 */
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 980px){
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Card ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--b);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(60, 40, 120, 0.06);
+}
+
+/* ===== Form ===== */
 textarea, input, select {
-  color: #151526 !important;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--b);
+  border-radius: 10px;
+  font: inherit;
+  background: #faf9ff;
+  color: var(--text);
 }
 
-/* プレースホルダー（薄すぎ防止） */
 textarea::placeholder,
 input::placeholder {
-  color: #6a6a8a !important;
+  color: #8a82a8;
 }
 
-/* タグ */
-.tag {
-  color: #2a2a55 !important;
-  font-weight: 500;
+textarea {
+  min-height: 150px;
+  resize: vertical;
 }
 
-/* テーブル文字 */
-.table .cell {
-  color: #1e1e2f !important;
-}
-
-/* ボタン文字 */
+/* ===== Buttons ===== */
 button {
-  color: #ffffff !important;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(107,95,214,0.25);
+}
+
+button:hover {
+  filter: brightness(1.05);
 }
 
 button.ghost {
-  color: #1e1e2f !important;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: none;
 }
 
-/* フッター */
+button.ghost:hover {
+  background: var(--accent-soft);
+}
+
+/* ===== Utility ===== */
+.row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.grow { flex: 1; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--b);
+  margin: 14px 0;
+}
+
+/* ===== Issues ===== */
+.issues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.issues li {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+  background: #fbfaff;
+}
+
+/* ===== Tags ===== */
+.tag {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: #3a2f7a;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+/* ===== Hints ===== */
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #5e5580;
+}
+
+/* ===== Grid helpers ===== */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 980px){
+  .grid4 { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== Table ===== */
+.table {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.table .rowh,
+.table .rowd {
+  display: grid;
+  grid-template-columns: 1fr 2fr 0.7fr 0.9fr 1.1fr 0.6fr;
+}
+
+.table .rowh {
+  background: #ede9ff;
+  font-weight: 700;
+  color: #2f2566;
+}
+
+.table .cell {
+  padding: 10px;
+  border-bottom: 1px solid #ece8f8;
+  font-size: 14px;
+}
+
+.table .rowd:last-child .cell {
+  border-bottom: none;
+}
+
+/* ===== Footer ===== */
 .foot {
-  color: #3a3a5a !important;
+  color: #6a6090;
+}
+
+/* ===== Steps ===== */
+.steps {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.steps li {
+  margin: 6px 0;
+  color: #2f2566;
+}
+
+/* ===== Dashboard ===== */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.kpi {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  padding: 12px;
+  background: #faf9ff;
+}
+
+.kpi .k {
+  color: #6a6090;
+  font-size: 12px;
+}
+
+.kpi .v {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 4px;
+  color: #2a1f55;
+}
+
+/* ===== Progress ===== */
+.progressWrap { margin-top: 10px; }
+
+.progressLabel {
+  font-size: 12px;
+  color: #5e5580;
+  margin-bottom: 6px;
+}
+
+.progressBar {
+  height: 12px;
+  border-radius: 999px;
+  background: #e6e1f5;
+  overflow: hidden;
+  border: 1px solid var(--b);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #6b5fd6, #9a8cff);
+  border-radius: 999px;
+}
+
+/* ===== Checks ===== */
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  background: #faf9ff;
+  color: #2f2566;
+  font-size: 14px;
+}
+
+/* ===== Filters ===== */
+.filters {
+  background: #f6f4ff;
+  border: 1px dashed var(--b);
+  padding: 12px;
+  border-radius: 14px;
+}
+
+/* ===== Lists ===== */
+.bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #2f2566;
 }
