@@ -20,9 +20,31 @@ hr { border:none; border-top:1px solid var(--b); margin:14px 0; }
 .tag { display:inline-block; border:1px solid var(--b); border-radius:999px; padding:2px 8px; font-size: 12px; margin-right: 6px; color:#333; }
 .hint { margin-top: 10px; font-size: 12px; color:#555; }
 .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.grid4 { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
+@media (max-width: 980px){ .grid4 { grid-template-columns: 1fr 1fr; } }
 .table { border:1px solid var(--b); border-radius: 12px; overflow:hidden; }
-.table .rowh, .table .rowd { display:grid; grid-template-columns: 1fr 2fr 0.7fr 1.3fr 0.6fr; gap:0; }
+.table .rowh, .table .rowd { display:grid; grid-template-columns: 1fr 2fr 0.7fr 0.9fr 1.1fr 0.6fr; gap:0; }
+@media (max-width: 980px){
+  .table .rowh, .table .rowd { grid-template-columns: 1fr 2fr; }
+  .table .rowh .cell:nth-child(n+3),
+  .table .rowd .cell:nth-child(n+3) { display:none; }
+}
 .table .rowh { background:#f2f2f2; font-weight:600; }
 .table .cell { padding:10px; border-bottom:1px solid #eee; }
 .table .rowd:last-child .cell { border-bottom:none; }
 .foot { color:#666; }
+
+/* ✅ Additions */
+.steps { margin:8px 0 0; padding-left: 20px; }
+.steps li { margin:6px 0; }
+.dash { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; }
+.kpi { border:1px solid var(--b); border-radius:12px; padding:10px; background:#fff; }
+.kpi .k { color:#666; font-size:12px; }
+.kpi .v { font-size:22px; font-weight:700; margin-top:4px; }
+.progressWrap { margin-top:10px; }
+.progressLabel { font-size:12px; color:#555; margin-bottom:6px; }
+.progressBar { height: 12px; border-radius:999px; background:#eee; overflow:hidden; border:1px solid var(--b); }
+.progressFill { height: 100%; background:#111; border-radius:999px; }
+.check { display:flex; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--b); border-radius:12px; }
+.filters { background:#fafafa; border:1px dashed var(--b); padding:10px; border-radius:12px; }
+.bullets { margin:10px 0 0; padding-left: 18px; }
