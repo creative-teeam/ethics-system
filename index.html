@@ -3,27 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>権利処理・管理システム (GitHub Pages)</title>
-  <link rel="stylesheet" href="style.css?v=20260128" />
-
-  <!-- ★ここを追加 -->
-  <style>
-    body { color: #1a1a2e; }
-    h1, h2, h3, h4, h5, h6 { color: #111122; }
-    .sub, .hint, small { color: #303050; }
-    input, textarea, select { color: #111122; }
-    input::placeholder, textarea::placeholder { color: #55557a; opacity: 1; }
-    label, li, summary, details, ol, ul, div, span { color: inherit; }
-    .table .cell { color: #111122; }
-    .tag { color: #1a1a2e; font-weight: 600; }
-    button.ghost { color: #111122; }
-    a { color: #2d2db3; }
-    a:visited { color: #5a2db3; }
-  </style>
+  <title>Stage Ethics & Rights (GitHub Pages)</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="wrap">
-    <h1>権利処理・管理システム</h1>
+    <h1>Stage Ethics & Rights</h1>
     <p class="sub">GitHubだけで動く（静的）デモ：入力テンプレ→論点抽出→合意形成ログ→JSON書き出し</p>
   </header>
 
@@ -123,6 +108,7 @@
       <div class="row">
         <select id="projectSelect" class="grow"></select>
         <button class="ghost" id="deleteProjectBtn">案件削除</button>
+        <button class="ghost" id="exportAllBtn">全体JSON書き出し</button>
       </div>
 
       <hr />
