@@ -1,50 +1,297 @@
-:root { --b:#ddd; --bg:#fafafa; --text:#111; }
-* { box-sizing: border-box; }
-body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--text); background:var(--bg); }
-.wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
-h1 { margin: 6px 0 0; font-size: 28px; }
-.sub { margin: 8px 0 0; color:#444; }
-.grid { display:grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; align-items:start; }
-@media (max-width: 980px){ .grid { grid-template-columns: 1fr; } }
-.card { background:white; border:1px solid var(--b); border-radius: 14px; padding: 14px; }
-textarea, input, select { width:100%; padding:10px; border:1px solid var(--b); border-radius: 10px; font: inherit; }
-textarea { min-height: 150px; resize: vertical; }
-.row { display:flex; gap:10px; margin-top: 10px; }
-.grow { flex:1; }
-button { padding:10px 12px; border-radius: 10px; border:1px solid #111; background:#111; color:white; cursor:pointer; }
-button.ghost { background:transparent; color:#111; border:1px solid var(--b); }
-button:hover { opacity: .92; }
-hr { border:none; border-top:1px solid var(--b); margin:14px 0; }
-.issues { list-style:none; padding:0; margin:0; }
-.issues li { border:1px solid var(--b); border-radius: 12px; padding:10px; margin-top:10px; }
-.tag { display:inline-block; border:1px solid var(--b); border-radius:999px; padding:2px 8px; font-size: 12px; margin-right: 6px; color:#333; }
-.hint { margin-top: 10px; font-size: 12px; color:#555; }
-.grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-.grid4 { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; }
-@media (max-width: 980px){ .grid4 { grid-template-columns: 1fr 1fr; } }
-.table { border:1px solid var(--b); border-radius: 12px; overflow:hidden; }
-.table .rowh, .table .rowd { display:grid; grid-template-columns: 1fr 2fr 0.7fr 0.9fr 1.1fr 0.6fr; gap:0; }
-@media (max-width: 980px){
-  .table .rowh, .table .rowd { grid-template-columns: 1fr 2fr; }
-  .table .rowh .cell:nth-child(n+3),
-  .table .rowd .cell:nth-child(n+3) { display:none; }
+:root {
+  --b: #d8d2e8;          /* ボーダー：薄紫グレー */
+  --bg: #f4f1fb;         /* 背景：淡い紫 */
+  --card: #ffffff;       /* カード背景：白 */
+  --text: #1f1a2b;       /* 文字：濃い紫寄りの黒 */
+  --subtext: #4a3f66;    /* サブ文字 */
+  --accent: #6b5fd6;     /* アクセント紫 */
+  --accent-soft: #e7e3ff;/* 淡いアクセント */
 }
-.table .rowh { background:#f2f2f2; font-weight:600; }
-.table .cell { padding:10px; border-bottom:1px solid #eee; }
-.table .rowd:last-child .cell { border-bottom:none; }
-.foot { color:#666; }
 
-/* ✅ Additions */
-.steps { margin:8px 0 0; padding-left: 20px; }
-.steps li { margin:6px 0; }
-.dash { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; }
-.kpi { border:1px solid var(--b); border-radius:12px; padding:10px; background:#fff; }
-.kpi .k { color:#666; font-size:12px; }
-.kpi .v { font-size:22px; font-weight:700; margin-top:4px; }
-.progressWrap { margin-top:10px; }
-.progressLabel { font-size:12px; color:#555; margin-bottom:6px; }
-.progressBar { height: 12px; border-radius:999px; background:#eee; overflow:hidden; border:1px solid var(--b); }
-.progressFill { height: 100%; background:#111; border-radius:999px; }
-.check { display:flex; gap:8px; align-items:center; padding:8px 10px; border:1px solid var(--b); border-radius:12px; }
-.filters { background:#fafafa; border:1px dashed var(--b); padding:10px; border-radius:12px; }
-.bullets { margin:10px 0 0; padding-left: 18px; }
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, #f6f3ff 0%, #f2eefb 100%);
+}
+
+/* ===== Layout ===== */
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+h1 {
+  margin: 6px 0 0;
+  font-size: 28px;
+  color: #2a1f55;
+}
+
+.sub {
+  margin: 8px 0 0;
+  color: var(--subtext);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 980px){
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Card ===== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--b);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(60, 40, 120, 0.06);
+}
+
+/* ===== Form ===== */
+textarea, input, select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--b);
+  border-radius: 10px;
+  font: inherit;
+  background: #faf9ff;
+  color: var(--text);
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: #8a82a8;
+}
+
+textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* ===== Buttons ===== */
+button {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(107,95,214,0.25);
+}
+
+button:hover {
+  filter: brightness(1.05);
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: none;
+}
+
+button.ghost:hover {
+  background: var(--accent-soft);
+}
+
+/* ===== Utility ===== */
+.row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.grow { flex: 1; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--b);
+  margin: 14px 0;
+}
+
+/* ===== Issues ===== */
+.issues {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.issues li {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 10px;
+  background: #fbfaff;
+}
+
+/* ===== Tags ===== */
+.tag {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: #3a2f7a;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+/* ===== Hints ===== */
+.hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #5e5580;
+}
+
+/* ===== Grid helpers ===== */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 980px){
+  .grid4 { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== Table ===== */
+.table {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.table .rowh,
+.table .rowd {
+  display: grid;
+  grid-template-columns: 1fr 2fr 0.7fr 0.9fr 1.1fr 0.6fr;
+}
+
+.table .rowh {
+  background: #ede9ff;
+  font-weight: 700;
+  color: #2f2566;
+}
+
+.table .cell {
+  padding: 10px;
+  border-bottom: 1px solid #ece8f8;
+  font-size: 14px;
+}
+
+.table .rowd:last-child .cell {
+  border-bottom: none;
+}
+
+/* ===== Footer ===== */
+.foot {
+  color: #6a6090;
+}
+
+/* ===== Steps ===== */
+.steps {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.steps li {
+  margin: 6px 0;
+  color: #2f2566;
+}
+
+/* ===== Dashboard ===== */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.kpi {
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  padding: 12px;
+  background: #faf9ff;
+}
+
+.kpi .k {
+  color: #6a6090;
+  font-size: 12px;
+}
+
+.kpi .v {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 4px;
+  color: #2a1f55;
+}
+
+/* ===== Progress ===== */
+.progressWrap { margin-top: 10px; }
+
+.progressLabel {
+  font-size: 12px;
+  color: #5e5580;
+  margin-bottom: 6px;
+}
+
+.progressBar {
+  height: 12px;
+  border-radius: 999px;
+  background: #e6e1f5;
+  overflow: hidden;
+  border: 1px solid var(--b);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #6b5fd6, #9a8cff);
+  border-radius: 999px;
+}
+
+/* ===== Checks ===== */
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--b);
+  border-radius: 14px;
+  background: #faf9ff;
+  color: #2f2566;
+  font-size: 14px;
+}
+
+/* ===== Filters ===== */
+.filters {
+  background: #f6f4ff;
+  border: 1px dashed var(--b);
+  padding: 12px;
+  border-radius: 14px;
+}
+
+/* ===== Lists ===== */
+.bullets {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #2f2566;
+}
