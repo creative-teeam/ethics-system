@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Stage Ethics & Rights (GitHub Pages)</title>
+  <title>権利処理・管理システム (GitHub Pages)</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="wrap">
-    <h1>Stage Ethics & Rights</h1>
+    <h1>権利処理・管理システム</h1>
     <p class="sub"></p>
   </header>
-  
+
   <main class="wrap grid">
-    <!-- ✅ ガイド + ダッシュボード -->
+    <!-- ✅ ダッシュボード + 入力テンプレ -->
     <section class="card">
       <h2 style="margin-top:12px;">案件ダッシュボード</h2>
       <div class="dash">
@@ -94,6 +94,9 @@
       <div class="row">
         <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
         <button type="button" id="createProjectBtn">作成</button>
+
+        <!-- ✅ app.js が exportAllBtn を参照するので用意（無いとJSが止まってログ追加も動かなくなることがあります） -->
+        <button type="button" class="ghost" id="exportAllBtn">全体JSON書き出し</button>
       </div>
 
       <div class="row">
@@ -165,6 +168,11 @@
             <div class="hint" style="margin-top:6px;">
               ※複数期間は「どれか1つでも一致（OR）」で絞り込みます。
             </div>
+
+            <!-- ✅ 重要：あなたの app.js が f_from / f_to を参照している場合に備えて “隠し入力” を残す -->
+            <!-- （複数期間対応の app.js に差し替えたら、これは不要です） -->
+            <input id="f_from" type="date" style="display:none" />
+            <input id="f_to" type="date" style="display:none" />
           </div>
         </div>
       </div>
@@ -233,6 +241,10 @@
 
       <div class="row" style="margin-top:12px;">
         <button type="button" id="addLogBtn">ログ追加</button>
+
+        <!-- ✅ app.js が exportBtn を参照するので用意（無いとJSが止まってログ追加が動かない原因になります） -->
+        <button type="button" class="ghost" id="exportBtn">JSON書き出し（この案件）</button>
+
         <button type="button" class="ghost" id="clearLogsBtn">ログ全削除</button>
       </div>
 
@@ -249,7 +261,6 @@
     <small>© Stage Ethics Demo / GitHub Pages only</small>
   </footer>
 
-  <!-- ※キャッシュ回避したいなら ?v= 付けてOK -->
   <script src="app.js"></script>
 </body>
 </html>
