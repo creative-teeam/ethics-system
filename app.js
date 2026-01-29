@@ -1,5 +1,5 @@
 // app.js（LocalStorage版：index.html一致・期間（複数）追加対応）
-// ✅ このHTMLに存在するIDだけ参照します（export系は無し）
+// ✅ export系（exportBtn/exportAllBtn）は完全に削除
 
 const STORE_KEY = "stageEthicsData_v1";
 
@@ -252,7 +252,6 @@ function attachDateRowEvents(rowEl) {
   delBtn?.addEventListener("click", () => {
     const rows = dateRows?.querySelectorAll(".dateRow") || [];
     if (rows.length <= 1) {
-      // 1行は残す：値だけ消す
       rowEl.querySelector(".f_from").value = "";
       rowEl.querySelector(".f_to").value = "";
       renderAll();
@@ -326,8 +325,6 @@ function applyLogFilters(logs) {
     if (f.element && l.element !== f.element) return false;
     if (f.category && l.category !== f.category) return false;
     if (f.status && l.status !== f.status) return false;
-
-    // ✅ 複数期間は OR
     if (!inAnyDateRanges(l.at, f.dateRanges)) return false;
 
     if (f.q) {
@@ -687,7 +684,7 @@ if (dateRows) {
   if (first) attachDateRowEvents(first);
 }
 
-// フィルタ解除（HTMLのボタンは type="button" なのでフォーム送信されません）
+// フィルタ解除（複数期間も含めてリセット）
 f_reset?.addEventListener("click", () => {
   if (f_q) f_q.value = "";
   if (f_element) f_element.value = "";
