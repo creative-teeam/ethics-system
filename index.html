@@ -94,9 +94,6 @@
       <div class="row">
         <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
         <button type="button" id="createProjectBtn">作成</button>
-
-        <!-- ✅ app.js が exportAllBtn を参照するので用意（無いとJSが止まってログ追加も動かなくなることがあります） -->
-        <button type="button" class="ghost" id="exportAllBtn">全体JSON書き出し</button>
       </div>
 
       <div class="row">
@@ -108,7 +105,7 @@
 
       <h2>④ ログ（合意形成ログ）</h2>
 
-      <!-- ✅ フィルタ -->
+      <!-- フィルタ -->
       <div class="filters">
         <div class="grid4">
           <div>
@@ -145,13 +142,12 @@
           </div>
         </div>
 
-        <!-- ✅ ここが「複数期間」 -->
+        <!-- 複数期間 -->
         <div class="grid4" style="margin-top:10px;">
           <div style="grid-column:1/-1;">
             <label>期間（複数追加できます）</label>
 
             <div id="dateRows" class="dateRows">
-              <!-- 1行目（初期） -->
               <div class="dateRow">
                 <input class="f_from" type="date" />
                 <span class="dateSep">〜</span>
@@ -169,8 +165,6 @@
               ※複数期間は「どれか1つでも一致（OR）」で絞り込みます。
             </div>
 
-            <!-- ✅ 重要：あなたの app.js が f_from / f_to を参照している場合に備えて “隠し入力” を残す -->
-            <!-- （複数期間対応の app.js に差し替えたら、これは不要です） -->
             <input id="f_from" type="date" style="display:none" />
             <input id="f_to" type="date" style="display:none" />
           </div>
@@ -227,7 +221,6 @@
         </div>
       </div>
 
-      <!-- ✅ 添付 -->
       <div class="grid2" style="margin-top:10px;">
         <div>
           <label>添付URL（任意：同意書/資料リンク）</label>
@@ -241,10 +234,6 @@
 
       <div class="row" style="margin-top:12px;">
         <button type="button" id="addLogBtn">ログ追加</button>
-
-        <!-- ✅ app.js が exportBtn を参照するので用意（無いとJSが止まってログ追加が動かない原因になります） -->
-        <button type="button" class="ghost" id="exportBtn">JSON書き出し（この案件）</button>
-
         <button type="button" class="ghost" id="clearLogsBtn">ログ全削除</button>
       </div>
 
