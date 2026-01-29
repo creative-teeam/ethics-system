@@ -159,7 +159,6 @@ button.ghost {
 
 /* ===============================
    Red buttons (削除・リセット系)
-   - 案件削除 / ログ全削除 / 入力を消す / テンプレリセット / フィルタ解除 / 期間行削除（×）
 =============================== */
 #deleteProjectBtn,
 #clearLogsBtn,
@@ -182,16 +181,20 @@ button.ghost {
 }
 
 /* ===============================
-   Pink button (＋期間を追加)
+   Green buttons
+   - ＋期間を追加
+   - ログ追加
 =============================== */
-#btnAddDateRow {
-  background: #ff5aa5 !important;
+#btnAddDateRow,
+#addLogBtn {
+  background: #2ecc71 !important;
   color: #fff !important;
   border: none !important;
 }
 
-#btnAddDateRow:hover {
-  background: #e94b93 !important;
+#btnAddDateRow:hover,
+#addLogBtn:hover {
+  background: #27ae60 !important;
 }
 
 /* ===============================
