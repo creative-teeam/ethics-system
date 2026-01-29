@@ -14,7 +14,7 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff;   /* ← 淡い紫 */
+  background: #f3efff; /* 淡い紫 */
   color: #1a1a2e;
 }
 
@@ -116,6 +116,10 @@ textarea::placeholder {
   align-items: center;
 }
 
+.grow {
+  flex: 1;
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -137,7 +141,7 @@ button {
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
-  background: #4b5cff;   /* 通常ボタン（青） */
+  background: #4b5cff; /* 通常ボタン（青） */
   color: #fff;
   transition: 0.2s;
 }
@@ -154,28 +158,8 @@ button.ghost {
 }
 
 /* ===============================
-   ✅ JSON書き出しボタン2つを消す（HTMLから消してもOK／残ってても非表示）
-=============================== */
-#exportBtn,
-#exportAllBtn {
-  display: none !important;
-}
-
-/* ===============================
-   ✅ 期間追加ボタンをピンクに
-=============================== */
-#btnAddDateRow {
-  background: #ff4fa3 !important;
-  color: #fff !important;
-  border: none !important;
-}
-
-#btnAddDateRow:hover {
-  background: #e63b90 !important;
-}
-
-/* ===============================
    Red buttons (削除・リセット系)
+   - 案件削除 / ログ全削除 / 入力を消す / テンプレリセット / フィルタ解除 / 期間行削除（×）
 =============================== */
 #deleteProjectBtn,
 #clearLogsBtn,
@@ -195,6 +179,19 @@ button.ghost {
 #f_reset:hover,
 .btnDelDate:hover {
   background: #c0392b !important;
+}
+
+/* ===============================
+   Pink button (＋期間を追加)
+=============================== */
+#btnAddDateRow {
+  background: #ff5aa5 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+#btnAddDateRow:hover {
+  background: #e94b93 !important;
 }
 
 /* ===============================
@@ -219,7 +216,7 @@ button.ghost {
 
 .progressFill {
   height: 100%;
-  background: #2ecc71;  /* ← 進捗メーター 緑 */
+  background: #2ecc71; /* 進捗メーター 緑 */
   transition: width 0.3s;
 }
 
