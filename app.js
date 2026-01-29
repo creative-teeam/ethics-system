@@ -1,5 +1,5 @@
-// app.js（LocalStorage版：index.html一致・期間（複数）追加対応）
-// ✅ export系（exportBtn/exportAllBtn）は完全に削除
+// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ操作ログ）
+// ✅ export系は参照しません
 
 const STORE_KEY = "stageEthicsData_v1";
 
@@ -44,7 +44,7 @@ const f_category = document.getElementById("f_category");
 const f_status = document.getElementById("f_status");
 const f_reset = document.getElementById("f_reset");
 
-// ✅ Multi date rows (HTMLと一致)
+// ✅ Multi date rows
 const dateRows = document.getElementById("dateRows");
 const btnAddDateRow = document.getElementById("btnAddDateRow");
 
@@ -72,16 +72,16 @@ function escapeHtml(s) {
 }
 
 // --- Data model ---
-// data = { schemaVersion, currentProjectId, projects: { [id]: { id, title, logs: [], tasks: [] } } }
+// data = { schemaVersion, currentProjectId, projects: { [id]: { id, title, logs: [], tasks: [], filterLogs: [] } } }
 function loadData() {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.1.0",
+      schemaVersion: "2.2.0",
       currentProjectId: firstId,
       projects: {
-        [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [] }
+        [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [], filterLogs: [] }
       }
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(init));
@@ -113,6 +113,8 @@ function migrateIfNeeded(data) {
     const p = data.projects[pid];
     if (!Array.isArray(p.logs)) p.logs = [];
     if (!Array.isArray(p.tasks)) p.tasks = [];
+    if (!Array.isArray(p.filterLogs)) p.filterLogs = []; // ✅ フィルタログ
+
     p.logs.forEach((l) => {
       if (!l.id) l.id = uid();
       if (!l.at) l.at = nowISO();
@@ -122,7 +124,7 @@ function migrateIfNeeded(data) {
     });
   });
 
-  data.schemaVersion = "2.1.0";
+  data.schemaVersion = "2.2.0";
   return data;
 }
 
@@ -245,24 +247,25 @@ function generateTasksFromIssues(issues) {
 }
 
 // ------------------------
-// ✅ 期間（複数）行の追加/削除（HTMLと一致）
+// ✅ 期間（複数）行の追加/削除
 // ------------------------
 function attachDateRowEvents(rowEl) {
   const delBtn = rowEl.querySelector(".btnDelDate");
+
   delBtn?.addEventListener("click", () => {
     const rows = dateRows?.querySelectorAll(".dateRow") || [];
     if (rows.length <= 1) {
       rowEl.querySelector(".f_from").value = "";
       rowEl.querySelector(".f_to").value = "";
-      renderAll();
+      addFilterLog("date_del");
       return;
     }
     rowEl.remove();
-    renderAll();
+    addFilterLog("date_del");
   });
 
-  rowEl.querySelector(".f_from")?.addEventListener("change", renderAll);
-  rowEl.querySelector(".f_to")?.addEventListener("change", renderAll);
+  rowEl.querySelector(".f_from")?.addEventListener("change", () => addFilterLog("change"));
+  rowEl.querySelector(".f_to")?.addEventListener("change", () => addFilterLog("change"));
 }
 
 function addDateRow(from = "", to = "") {
@@ -307,7 +310,53 @@ function inAnyDateRanges(iso, ranges) {
 }
 
 // ------------------------
-// フィルタ
+// ✅ フィルタ操作ログ（保存）
+//  保存対象：検索(q)/要素/カテゴリ/ステータス/期間（複数）
+// ------------------------
+function snapshotFilters() {
+  return {
+    q: (f_q?.value || "").trim(),
+    element: f_element?.value || "",
+    category: f_category?.value || "",
+    status: f_status?.value || "",
+    dateRanges: getDateRangesFromUI()
+  };
+}
+function sameFilters(a, b) {
+  return JSON.stringify(a || {}) === JSON.stringify(b || {});
+}
+function addFilterLog(action) {
+  const d = loadData();
+  const p = d.projects[d.currentProjectId];
+  if (!p) return;
+
+  if (!Array.isArray(p.filterLogs)) p.filterLogs = [];
+
+  const filters = snapshotFilters();
+  const last = p.filterLogs[0]?.filters;
+
+  // 連続で同じ状態は保存しない（changeのみ）
+  if (action === "change" && sameFilters(filters, last)) {
+    renderAll();
+    return;
+  }
+
+  p.filterLogs.unshift({
+    id: uid(),
+    at: nowISO(),
+    action,   // "change" / "reset" / "date_add" / "date_del"
+    filters
+  });
+
+  // 増えすぎ防止
+  if (p.filterLogs.length > 200) p.filterLogs.length = 200;
+
+  saveData(d);
+  renderAll();
+}
+
+// ------------------------
+// フィルタ適用
 // ------------------------
 function getActiveFilters() {
   return {
@@ -325,6 +374,8 @@ function applyLogFilters(logs) {
     if (f.element && l.element !== f.element) return false;
     if (f.category && l.category !== f.category) return false;
     if (f.status && l.status !== f.status) return false;
+
+    // ✅ 複数期間は OR
     if (!inAnyDateRanges(l.at, f.dateRanges)) return false;
 
     if (f.q) {
@@ -579,7 +630,7 @@ createProjectBtn?.addEventListener("click", () => {
   if (!title) return alert("案件名を入力してください");
   const data = loadData();
   const id = uid();
-  data.projects[id] = { id, title, logs: [], tasks: [] };
+  data.projects[id] = { id, title, logs: [], tasks: [], filterLogs: [] };
   data.currentProjectId = id;
   saveData(data);
   if (projectTitle) projectTitle.value = "";
@@ -666,16 +717,24 @@ btnResetTemplate?.addEventListener("click", () => {
   if (r) r.value = "";
 });
 
-// Filters: text/select
+// ✅ フィルタ：変更したらフィルタログを貯める（デバウンス）
+let filterLogTimer = null;
+function logFilterChangeDebounced() {
+  if (filterLogTimer) clearTimeout(filterLogTimer);
+  filterLogTimer = setTimeout(() => {
+    addFilterLog("change");
+  }, 500);
+}
+
 [f_q, f_element, f_category, f_status].forEach(el => {
-  el?.addEventListener("input", renderAll);
-  el?.addEventListener("change", renderAll);
+  el?.addEventListener("input", () => { renderAll(); logFilterChangeDebounced(); });
+  el?.addEventListener("change", () => { renderAll(); addFilterLog("change"); });
 });
 
 // ✅ 期間（複数）: 追加ボタン
 btnAddDateRow?.addEventListener("click", () => {
   addDateRow("", "");
-  renderAll();
+  addFilterLog("date_add");
 });
 
 // ✅ 初期行にもイベント付与（HTML内の1行目）
@@ -684,20 +743,20 @@ if (dateRows) {
   if (first) attachDateRowEvents(first);
 }
 
-// フィルタ解除（複数期間も含めてリセット）
+// フィルタ解除
 f_reset?.addEventListener("click", () => {
   if (f_q) f_q.value = "";
   if (f_element) f_element.value = "";
   if (f_category) f_category.value = "";
   if (f_status) f_status.value = "";
 
-  // ✅ 期間（複数）もリセット：1行だけ残す
+  // 期間（複数）もリセット：1行だけ残す
   if (dateRows) {
     dateRows.innerHTML = "";
     addDateRow("", "");
   }
 
-  renderAll();
+  addFilterLog("reset");
 });
 
 // init
