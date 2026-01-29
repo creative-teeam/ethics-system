@@ -154,6 +154,27 @@ button.ghost {
 }
 
 /* ===============================
+   ✅ JSON書き出しボタン2つを消す（HTMLから消してもOK／残ってても非表示）
+=============================== */
+#exportBtn,
+#exportAllBtn {
+  display: none !important;
+}
+
+/* ===============================
+   ✅ 期間追加ボタンをピンクに
+=============================== */
+#btnAddDateRow {
+  background: #ff4fa3 !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+#btnAddDateRow:hover {
+  background: #e63b90 !important;
+}
+
+/* ===============================
    Red buttons (削除・リセット系)
 =============================== */
 #deleteProjectBtn,
