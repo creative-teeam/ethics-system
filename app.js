@@ -1,4 +1,4 @@
-// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ操作ログ）
+// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ操作ログ + 自由記述メモ論点 + 参照URL表示）
 // ✅ export系は参照しません
 
 const STORE_KEY = "stageEthicsData_v1";
@@ -71,6 +71,35 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+// ✅ URL抽出（自由記述に貼られた参照URLも拾う）
+function extractUrls(text) {
+  const t = String(text ?? "");
+  // 末尾の句読点/括弧を取り除くことを想定して少し緩め
+  const re = /(https?:\/\/[^\s<>"'）)\]]+)/g;
+  const found = t.match(re) || [];
+  // 重複除去
+  return Array.from(new Set(found));
+}
+
+// ✅ テンプレの【自由記述】以降から「メモ行」を抽出して論点化
+function extractFreeNotes(text) {
+  const t = String(text ?? "");
+  const marker = "【自由記述】";
+  const idx = t.indexOf(marker);
+  if (idx < 0) return [];
+  const after = t.slice(idx + marker.length).trim();
+  if (!after) return [];
+
+  // URLだけの行なども混じるので、空行は除外
+  const lines = after
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  // 先頭の箇条書き記号は軽く外す（・ / - / *）
+  return lines.map(s => s.replace(/^([・\-\*]\s*)/, "").trim()).filter(Boolean);
+}
+
 // --- Data model ---
 // data = { schemaVersion, currentProjectId, projects: { [id]: { id, title, logs: [], tasks: [], filterLogs: [] } } }
 function loadData() {
@@ -113,7 +142,7 @@ function migrateIfNeeded(data) {
     const p = data.projects[pid];
     if (!Array.isArray(p.logs)) p.logs = [];
     if (!Array.isArray(p.tasks)) p.tasks = [];
-    if (!Array.isArray(p.filterLogs)) p.filterLogs = []; // ✅ フィルタログ
+    if (!Array.isArray(p.filterLogs)) p.filterLogs = [];
 
     p.logs.forEach((l) => {
       if (!l.id) l.id = uid();
@@ -160,6 +189,17 @@ function extractIssues(text) {
   if (text.includes("未成年")) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
+
+  // ✅ 自由記述メモを「論点」として追加（ユーザー入力をそのまま見える化）
+  const notes = extractFreeNotes(text);
+  notes.slice(0, 12).forEach((line) => {
+    // URLのみの行は論点としては弱いのでスキップ（URLは別枠で表示する）
+    if (/^https?:\/\//i.test(line)) return;
+
+    const trimmed = line.length > 220 ? (line.slice(0, 220) + "…") : line;
+    add("全体", "ethics", `自由記述メモ：${trimmed}`);
+  });
+
   if (issues.length === 0) {
     add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出）』などの情報を追記すると精度が上がります。");
   }
@@ -311,7 +351,6 @@ function inAnyDateRanges(iso, ranges) {
 
 // ------------------------
 // ✅ フィルタ操作ログ（保存）
-//  保存対象：検索(q)/要素/カテゴリ/ステータス/期間（複数）
 // ------------------------
 function snapshotFilters() {
   return {
@@ -335,7 +374,6 @@ function addFilterLog(action) {
   const filters = snapshotFilters();
   const last = p.filterLogs[0]?.filters;
 
-  // 連続で同じ状態は保存しない（changeのみ）
   if (action === "change" && sameFilters(filters, last)) {
     renderAll();
     return;
@@ -348,7 +386,6 @@ function addFilterLog(action) {
     filters
   });
 
-  // 増えすぎ防止
   if (p.filterLogs.length > 200) p.filterLogs.length = 200;
 
   saveData(d);
@@ -375,7 +412,6 @@ function applyLogFilters(logs) {
     if (f.category && l.category !== f.category) return false;
     if (f.status && l.status !== f.status) return false;
 
-    // ✅ 複数期間は OR
     if (!inAnyDateRanges(l.at, f.dateRanges)) return false;
 
     if (f.q) {
@@ -402,11 +438,31 @@ function renderProjects(data) {
   projectSelect.value = data.currentProjectId;
 }
 
-function renderIssues(issues) {
+// ✅ 参照URLを issues に表示＆「添付URLに入れる」ボタンで logAttachUrl に貼れるようにする
+function renderIssues(issues, refUrls = []) {
   if (!issuesList) return;
   issuesList.innerHTML = "";
 
-  issues.forEach((it) => {
+  const urlBlockHtml = (() => {
+    if (!refUrls || refUrls.length === 0) return "";
+    const items = refUrls.slice(0, 8).map((u) => {
+      const su = escapeHtml(u);
+      return `
+        <li style="margin:6px 0;">
+          <a href="${su}" target="_blank" rel="noreferrer">${su}</a>
+          <button type="button" class="ghost" data-paste-url="${su}" style="margin-left:8px;">添付URLに入れる</button>
+        </li>
+      `;
+    }).join("");
+    return `
+      <div style="margin-top:10px;">
+        <div style="font-size:0.85rem;color:#444;margin-bottom:6px;">参照URL（メモ内から検出）</div>
+        <ul class="bullets" style="padding-left:18px;">${items}</ul>
+      </div>
+    `;
+  })();
+
+  issues.forEach((it, idx) => {
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
@@ -414,22 +470,38 @@ function renderIssues(issues) {
         <span class="tag">${escapeHtml(it.category)}</span>
       </div>
       <div style="margin-top:6px;">${escapeHtml(it.issue)}</div>
+
+      ${idx === 0 ? urlBlockHtml : ""}
+
       <div class="row" style="margin-top:10px;">
-        <button class="ghost" data-add="1">この論点をログに入れる</button>
+        <button type="button" class="ghost" data-add="1">この論点をログに入れる</button>
       </div>
     `;
-    const btn = li.querySelector("button[data-add]");
-    btn.addEventListener("click", () => {
+
+    // 「この論点をログに入れる」
+    const btn = li.querySelector('button[data-add="1"]');
+    btn?.addEventListener("click", () => {
       if (logElement) logElement.value = it.element;
       if (logCategory) logCategory.value = it.category;
       if (logIssue) logIssue.value = it.issue;
       if (logDecision) logDecision.value = "要確認";
       if (logStatus) logStatus.value = "needs_review";
       if (logRationale) logRationale.value = "";
-      if (logAttachUrl) logAttachUrl.value = "";
-      if (logAttachMemo) logAttachMemo.value = "";
+      // 添付はそのまま（URL貼りたい場合は下のボタンを押す）
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     });
+
+    // ✅ 参照URL → 添付URLに貼る
+    li.querySelectorAll("button[data-paste-url]").forEach((b) => {
+      b.addEventListener("click", () => {
+        const u = b.getAttribute("data-paste-url") || "";
+        if (logAttachUrl) logAttachUrl.value = u;
+        if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = "参照URL";
+        // ついでに下へ（添付欄が見えるように）
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      });
+    });
+
     issuesList.appendChild(li);
   });
 }
@@ -487,11 +559,10 @@ function renderLogs(data) {
         </select>
       </div>
       <div class="cell">${attachHtml}</div>
-      <div class="cell"><button class="ghost" data-del="${escapeHtml(l.id)}">×</button></div>
+      <div class="cell"><button type="button" class="ghost" data-del="${escapeHtml(l.id)}">×</button></div>
     `;
 
-    // ステータス変更
-    row.querySelector("select[data-st]").addEventListener("change", (e) => {
+    row.querySelector("select[data-st]")?.addEventListener("change", (e) => {
       const newStatus = e.target.value;
       const d = loadData();
       const pp = d.projects[d.currentProjectId];
@@ -501,8 +572,7 @@ function renderLogs(data) {
       renderAll();
     });
 
-    // 削除
-    row.querySelector("button[data-del]").addEventListener("click", () => {
+    row.querySelector("button[data-del]")?.addEventListener("click", () => {
       if (!confirm("このログを削除しますか？")) return;
       const d = loadData();
       const pp = d.projects[d.currentProjectId];
@@ -601,9 +671,11 @@ analyzeBtn?.addEventListener("click", () => {
   const data = loadData();
   const p = data.projects[data.currentProjectId];
   const text = inputText?.value || "";
-  const issues = extractIssues(text);
 
-  renderIssues(issues);
+  const issues = extractIssues(text);
+  const refUrls = extractUrls(text);
+
+  renderIssues(issues, refUrls);
   renderMaterialOutputs(text, issues);
 
   const newTasks = generateTasksFromIssues(issues);
