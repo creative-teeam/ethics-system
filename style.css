@@ -9,7 +9,7 @@
 }
 
 /* ===============================
-   Background (淡い紫)
+   Background
 =============================== */
 html, body {
   width: 100%;
@@ -68,6 +68,12 @@ footer {
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
+hr {
+  border: none;
+  border-top: 1px solid #e8e0ff;
+  margin: 14px 0;
+}
+
 /* ===============================
    Headings
 =============================== */
@@ -114,6 +120,7 @@ textarea::placeholder {
   gap: 10px;
   margin-top: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .grow { flex: 1; }
@@ -131,7 +138,7 @@ textarea::placeholder {
 }
 
 /* ===============================
-   Buttons (base)
+   Buttons
 =============================== */
 button {
   padding: 10px 14px;
@@ -317,12 +324,13 @@ button.danger:hover { background: #c0392b; }
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .dateSep { color: #666; }
 
 /* ===============================
-   Web Risk Panel
+   ✅ Web Risk Panel（検索リンクが“確実に見える”）
 =============================== */
 .webrisk {
   margin-top: 10px;
@@ -350,6 +358,14 @@ button.danger:hover { background: #c0392b; }
   margin-bottom: 8px;
 }
 
+/* ✅ リンクの見た目を強制 */
+.webrisk a,
+.webrisk a:visited {
+  color: #1f49ff !important;
+  text-decoration: underline !important;
+  font-weight: 600;
+}
+
 .webriskActions {
   display: flex;
   flex-wrap: wrap;
@@ -363,10 +379,18 @@ button.danger:hover { background: #c0392b; }
   min-width: 220px;
 }
 
-a.weblink {
-  color: #2b3cff;
-  text-decoration: underline;
+/* ===============================
+   Error Box
+=============================== */
+.errorBox {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fff0f0;
+  border: 1px solid #ffb3b3;
+  color: #7a0000;
   font-size: 0.9rem;
+  white-space: pre-wrap;
 }
 
 /* ===============================
@@ -386,5 +410,4 @@ a.weblink {
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
   .rowh, .rowd { grid-template-columns: 1fr; }
-  .row { flex-wrap: wrap; }
 }
