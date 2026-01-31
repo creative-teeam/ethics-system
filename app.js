@@ -1,5 +1,4 @@
-// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ操作ログ + 自由記述メモ論点 + 参照URL表示）
-// ✅ export系は参照しません
+// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ操作ログ + 自由記述Web根拠動線）
 
 const STORE_KEY = "stageEthicsData_v1";
 
@@ -11,6 +10,7 @@ const issuesList = document.getElementById("issuesList");
 const questionsList = document.getElementById("questionsList");
 const actionsList = document.getElementById("actionsList");
 const tasksList = document.getElementById("tasksList");
+const webRisksList = document.getElementById("webRisksList");
 
 // Projects
 const projectTitle = document.getElementById("projectTitle");
@@ -70,34 +70,15 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
-// ✅ URL抽出（自由記述に貼られた参照URLも拾う）
-function extractUrls(text) {
-  const t = String(text ?? "");
-  // 末尾の句読点/括弧を取り除くことを想定して少し緩め
-  const re = /(https?:\/\/[^\s<>"'）)\]]+)/g;
-  const found = t.match(re) || [];
-  // 重複除去
-  return Array.from(new Set(found));
-}
-
-// ✅ テンプレの【自由記述】以降から「メモ行」を抽出して論点化
-function extractFreeNotes(text) {
-  const t = String(text ?? "");
-  const marker = "【自由記述】";
-  const idx = t.indexOf(marker);
-  if (idx < 0) return [];
-  const after = t.slice(idx + marker.length).trim();
-  if (!after) return [];
-
-  // URLだけの行なども混じるので、空行は除外
-  const lines = after
-    .split(/\r?\n/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  // 先頭の箇条書き記号は軽く外す（・ / - / *）
-  return lines.map(s => s.replace(/^([・\-\*]\s*)/, "").trim()).filter(Boolean);
+function safeUrl(u) {
+  const t = (u || "").trim();
+  if (!t) return "";
+  try {
+    const url = new URL(t);
+    return url.toString();
+  } catch {
+    return "";
+  }
 }
 
 // --- Data model ---
@@ -107,7 +88,7 @@ function loadData() {
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.2.0",
+      schemaVersion: "2.3.0",
       currentProjectId: firstId,
       projects: {
         [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [], filterLogs: [] }
@@ -153,7 +134,7 @@ function migrateIfNeeded(data) {
     });
   });
 
-  data.schemaVersion = "2.2.0";
+  data.schemaVersion = "2.3.0";
   return data;
 }
 
@@ -162,7 +143,7 @@ function estimateSeverity(element, category, issueText) {
   const t = (issueText || "").toLowerCase();
   if (category === "safety") return "high";
   if (category === "privacy" && (t.includes("未成年") || t.includes("楽屋") || t.includes("個人特定"))) return "high";
-  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲"))) return "medium";
+  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲") || t.includes("引用"))) return "medium";
   if (category === "ethics" && (t.includes("実在") || t.includes("事件") || t.includes("災害"))) return "medium";
   return "low";
 }
@@ -189,17 +170,6 @@ function extractIssues(text) {
   if (text.includes("未成年")) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
-
-  // ✅ 自由記述メモを「論点」として追加（ユーザー入力をそのまま見える化）
-  const notes = extractFreeNotes(text);
-  notes.slice(0, 12).forEach((line) => {
-    // URLのみの行は論点としては弱いのでスキップ（URLは別枠で表示する）
-    if (/^https?:\/\//i.test(line)) return;
-
-    const trimmed = line.length > 220 ? (line.slice(0, 220) + "…") : line;
-    add("全体", "ethics", `自由記述メモ：${trimmed}`);
-  });
-
   if (issues.length === 0) {
     add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出）』などの情報を追記すると精度が上がります。");
   }
@@ -287,6 +257,235 @@ function generateTasksFromIssues(issues) {
 }
 
 // ------------------------
+// ✅ 自由記述メモ → リスク候補抽出 → 検索リンク生成（Web根拠を探す動線）
+// ------------------------
+function extractUrlsFromText(text) {
+  const urls = [];
+  const re = /(https?:\/\/[^\s<>"'）\]]+)/g;
+  const m = String(text || "").match(re) || [];
+  m.forEach(u => {
+    const su = safeUrl(u);
+    if (su && !urls.includes(su)) urls.push(su);
+  });
+  return urls;
+}
+
+function buildGoogleSearchUrl(query) {
+  const q = encodeURIComponent(query);
+  return `https://www.google.com/search?q=${q}`;
+}
+
+function detectWebRiskCandidates(text) {
+  const t = String(text || "");
+  const low = t.toLowerCase();
+
+  // すでに本文にURLがあれば「参照URL候補」として使える
+  const foundUrls = extractUrlsFromText(t);
+
+  const items = [];
+  const add = (key, title, element, category, reason, query) => {
+    items.push({ key, title, element, category, reason, query, foundUrls });
+  };
+
+  // 代表的な “権利侵害になりうる” トリガー
+  if (t.includes("配信") || t.includes("収録") || t.includes("アーカイブ") || low.includes("youtube") || low.includes("tiktok")) {
+    add(
+      "stream",
+      "配信/収録の許諾（上演とは別）",
+      "映像",
+      "copyright",
+      "配信・収録・アーカイブは『上演』と許諾範囲が分かれることがあり、音楽・肖像・映像素材の整理が必要です。",
+      "舞台 配信 収録 許諾 権利処理 上演との違い"
+    );
+  }
+
+  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("歌") || t.includes("音源")) {
+    add(
+      "music",
+      "既存曲（BGM/歌/カバー）の利用許諾",
+      "音楽",
+      "copyright",
+      "既存曲は「上演」「配信/録画」「音源（録音）利用」で許諾が変わることがあります。",
+      "既存曲 BGM 上演 配信 録画 許諾 どこまで"
+    );
+  }
+
+  if (t.includes("台本") || t.includes("引用") || t.includes("セリフ") || t.includes("原作") || t.includes("脚色")) {
+    add(
+      "script",
+      "台本・原作の引用/翻案/脚色（著作権）",
+      "脚本",
+      "copyright",
+      "台本の引用や翻案（脚色/改変）は、許諾や引用要件の検討が必要です。",
+      "台本 引用 要件 著作権 翻案 脚色 許諾"
+    );
+  }
+
+  if (t.includes("画像") || t.includes("写真") || t.includes("ロゴ") || t.includes("ポスター") || t.includes("映像素材") || t.includes("素材")) {
+    add(
+      "image",
+      "画像/写真/ロゴ/素材の二次利用（著作権・商標）",
+      "映像",
+      "copyright",
+      "画像やロゴ、映像素材は権利者が複数のことがあり、二次利用条件の確認が必要です。",
+      "画像 ロゴ 二次利用 著作権 商標 舞台"
+    );
+  }
+
+  if (t.includes("未成年") || t.includes("高校生") || t.includes("中学生") || t.includes("子役")) {
+    add(
+      "minor",
+      "未成年の撮影・公開（同意/プライバシー）",
+      "全体",
+      "privacy",
+      "未成年の出演・映り込みがある場合、保護者同意や公開範囲の設計が重要です。",
+      "未成年 出演 撮影 公開 同意書 何が必要"
+    );
+  }
+
+  if (t.includes("楽屋") || t.includes("舞台裏") || t.includes("バックヤード") || t.includes("個人情報")) {
+    add(
+      "backstage",
+      "舞台裏/楽屋の映り込み（プライバシー）",
+      "映像",
+      "privacy",
+      "楽屋や舞台裏は個人情報・私物・機微情報が映り込みやすく、公開範囲の制御が必要です。",
+      "楽屋 舞台裏 撮影 映り込み プライバシー 対策"
+    );
+  }
+
+  if (t.includes("実在") || t.includes("事件") || t.includes("災害")) {
+    add(
+      "real",
+      "実在事件/災害題材（倫理・名誉・配慮）",
+      "脚本",
+      "ethics",
+      "当事者性、誤解、名誉毀損・誹謗中傷の誘発などを評価し、注意書きや監修を検討します。",
+      "実在 事件 災害 舞台 表現 配慮 注意書き"
+    );
+  }
+
+  if (t.includes("ストロボ") || t.includes("点滅") || t.includes("爆音") || t.includes("大音量")) {
+    add(
+      "safety",
+      "点滅・大音量の注意（安全配慮）",
+      "照明",
+      "safety",
+      "光過敏や体調不良に配慮し、事前注意や回避導線を用意します。",
+      "ストロボ 点滅 注意書き 観客 体調不良 対策"
+    );
+  }
+
+  if (items.length === 0) {
+    add(
+      "none",
+      "明確なトリガーが少ないため、一般的な確認項目を検索",
+      "全体",
+      "ethics",
+      "配信有無、素材出所、改変範囲（脚本/演出）などを書き足すと検出が増えます。",
+      "舞台 権利処理 チェックリスト 配信 音楽 台本"
+    );
+  }
+
+  return items;
+}
+
+function renderWebRisks(text) {
+  if (!webRisksList) return;
+  webRisksList.innerHTML = "";
+
+  const items = detectWebRiskCandidates(text);
+  const urlsInMemo = extractUrlsFromText(text);
+
+  // 先に「メモ内URL」があれば表示
+  if (urlsInMemo.length) {
+    const box = document.createElement("div");
+    box.className = "webriskCard";
+    box.innerHTML = `
+      <div class="webriskTitle">メモ内に含まれるURL（参照候補）</div>
+      <div class="hint">※すでに書かれているURLをそのまま添付URLへ入れられます。</div>
+      <div class="webriskActions" style="margin-top:10px;">
+        <select id="memoUrlSelect"></select>
+        <button type="button" class="ghost" id="btnUseMemoUrl">このURLを添付URLへ</button>
+      </div>
+    `;
+    webRisksList.appendChild(box);
+
+    const sel = box.querySelector("#memoUrlSelect");
+    urlsInMemo.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u;
+      opt.textContent = u;
+      sel.appendChild(opt);
+    });
+
+    box.querySelector("#btnUseMemoUrl").addEventListener("click", () => {
+      const u = sel.value;
+      if (logAttachUrl) logAttachUrl.value = u;
+      if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = "メモ内参照URL";
+      // ついでにログ欄へスクロール
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    });
+  }
+
+  items.forEach((it) => {
+    const card = document.createElement("div");
+    card.className = "webriskCard";
+
+    const gUrl = buildGoogleSearchUrl(it.query);
+    const defaultMemo = `${it.title}（根拠）`;
+
+    card.innerHTML = `
+      <div class="webriskTitle">${escapeHtml(it.title)}</div>
+      <div class="webriskMeta">
+        <span class="tag">${escapeHtml(it.element)}</span>
+        <span class="tag">${escapeHtml(it.category)}</span>
+      </div>
+      <div>${escapeHtml(it.reason)}</div>
+
+      <div class="webriskActions">
+        <a class="weblink" href="${escapeHtml(gUrl)}" target="_blank" rel="noreferrer">🔎 この内容で検索（Google）</a>
+      </div>
+
+      <div class="webriskActions">
+        <input class="riskUrlInput" placeholder="見つけた根拠URLを貼る（https://...）" />
+        <button type="button" class="ghost btnApplyRiskUrl">添付URLに反映</button>
+      </div>
+
+      <div class="webriskActions">
+        <button type="button" class="ghost btnFillLogFromRisk">このリスクをログ入力欄へセット</button>
+      </div>
+    `;
+
+    // URLを添付へ反映
+    const urlInput = card.querySelector(".riskUrlInput");
+    const btnApply = card.querySelector(".btnApplyRiskUrl");
+    btnApply.addEventListener("click", () => {
+      const u = safeUrl(urlInput.value);
+      if (!u) return alert("URLが正しくありません（https://... 形式で貼ってください）");
+      if (logAttachUrl) logAttachUrl.value = u;
+      if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = defaultMemo;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    });
+
+    // リスクをログ入力欄へセット（要素/カテゴリ/論点に入れる）
+    const btnFill = card.querySelector(".btnFillLogFromRisk");
+    btnFill.addEventListener("click", () => {
+      if (logElement) logElement.value = it.element;
+      if (logCategory) logCategory.value = it.category;
+      if (logIssue) logIssue.value = `${it.title}：${it.reason}`;
+      if (logDecision) logDecision.value = "要確認";
+      if (logStatus) logStatus.value = "needs_review";
+      if (logRationale && !logRationale.value.trim()) logRationale.value = "自由記述から検出。Web根拠URLを添付して判断。";
+      if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = defaultMemo;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    });
+
+    webRisksList.appendChild(card);
+  });
+}
+
+// ------------------------
 // ✅ 期間（複数）行の追加/削除
 // ------------------------
 function attachDateRowEvents(rowEl) {
@@ -317,7 +516,7 @@ function addDateRow(from = "", to = "") {
     <input class="f_from" type="date" value="${escapeHtml(from)}" />
     <span class="dateSep">〜</span>
     <input class="f_to" type="date" value="${escapeHtml(to)}" />
-    <button type="button" class="ghost btnDelDate" title="この期間を削除">×</button>
+    <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
   `;
   dateRows.appendChild(row);
   attachDateRowEvents(row);
@@ -382,7 +581,7 @@ function addFilterLog(action) {
   p.filterLogs.unshift({
     id: uid(),
     at: nowISO(),
-    action,   // "change" / "reset" / "date_add" / "date_del"
+    action, // change/reset/date_add/date_del
     filters
   });
 
@@ -438,31 +637,11 @@ function renderProjects(data) {
   projectSelect.value = data.currentProjectId;
 }
 
-// ✅ 参照URLを issues に表示＆「添付URLに入れる」ボタンで logAttachUrl に貼れるようにする
-function renderIssues(issues, refUrls = []) {
+function renderIssues(issues) {
   if (!issuesList) return;
   issuesList.innerHTML = "";
 
-  const urlBlockHtml = (() => {
-    if (!refUrls || refUrls.length === 0) return "";
-    const items = refUrls.slice(0, 8).map((u) => {
-      const su = escapeHtml(u);
-      return `
-        <li style="margin:6px 0;">
-          <a href="${su}" target="_blank" rel="noreferrer">${su}</a>
-          <button type="button" class="ghost" data-paste-url="${su}" style="margin-left:8px;">添付URLに入れる</button>
-        </li>
-      `;
-    }).join("");
-    return `
-      <div style="margin-top:10px;">
-        <div style="font-size:0.85rem;color:#444;margin-bottom:6px;">参照URL（メモ内から検出）</div>
-        <ul class="bullets" style="padding-left:18px;">${items}</ul>
-      </div>
-    `;
-  })();
-
-  issues.forEach((it, idx) => {
+  issues.forEach((it) => {
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
@@ -470,38 +649,22 @@ function renderIssues(issues, refUrls = []) {
         <span class="tag">${escapeHtml(it.category)}</span>
       </div>
       <div style="margin-top:6px;">${escapeHtml(it.issue)}</div>
-
-      ${idx === 0 ? urlBlockHtml : ""}
-
       <div class="row" style="margin-top:10px;">
-        <button type="button" class="ghost" data-add="1">この論点をログに入れる</button>
+        <button class="ghost" data-add="1">この論点をログに入れる</button>
       </div>
     `;
-
-    // 「この論点をログに入れる」
-    const btn = li.querySelector('button[data-add="1"]');
-    btn?.addEventListener("click", () => {
+    const btn = li.querySelector("button[data-add]");
+    btn.addEventListener("click", () => {
       if (logElement) logElement.value = it.element;
       if (logCategory) logCategory.value = it.category;
       if (logIssue) logIssue.value = it.issue;
       if (logDecision) logDecision.value = "要確認";
       if (logStatus) logStatus.value = "needs_review";
       if (logRationale) logRationale.value = "";
-      // 添付はそのまま（URL貼りたい場合は下のボタンを押す）
+      if (logAttachUrl) logAttachUrl.value = "";
+      if (logAttachMemo) logAttachMemo.value = "";
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     });
-
-    // ✅ 参照URL → 添付URLに貼る
-    li.querySelectorAll("button[data-paste-url]").forEach((b) => {
-      b.addEventListener("click", () => {
-        const u = b.getAttribute("data-paste-url") || "";
-        if (logAttachUrl) logAttachUrl.value = u;
-        if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = "参照URL";
-        // ついでに下へ（添付欄が見えるように）
-        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      });
-    });
-
     issuesList.appendChild(li);
   });
 }
@@ -559,10 +722,11 @@ function renderLogs(data) {
         </select>
       </div>
       <div class="cell">${attachHtml}</div>
-      <div class="cell"><button type="button" class="ghost" data-del="${escapeHtml(l.id)}">×</button></div>
+      <div class="cell"><button class="ghost danger" data-del="${escapeHtml(l.id)}">×</button></div>
     `;
 
-    row.querySelector("select[data-st]")?.addEventListener("change", (e) => {
+    // ステータス変更
+    row.querySelector("select[data-st]").addEventListener("change", (e) => {
       const newStatus = e.target.value;
       const d = loadData();
       const pp = d.projects[d.currentProjectId];
@@ -572,7 +736,8 @@ function renderLogs(data) {
       renderAll();
     });
 
-    row.querySelector("button[data-del]")?.addEventListener("click", () => {
+    // 削除
+    row.querySelector("button[data-del]").addEventListener("click", () => {
       if (!confirm("このログを削除しますか？")) return;
       const d = loadData();
       const pp = d.projects[d.currentProjectId];
@@ -671,12 +836,13 @@ analyzeBtn?.addEventListener("click", () => {
   const data = loadData();
   const p = data.projects[data.currentProjectId];
   const text = inputText?.value || "";
-
   const issues = extractIssues(text);
-  const refUrls = extractUrls(text);
 
-  renderIssues(issues, refUrls);
+  renderIssues(issues);
   renderMaterialOutputs(text, issues);
+
+  // ✅ 自由記述のWeb根拠動線を表示
+  renderWebRisks(text);
 
   const newTasks = generateTasksFromIssues(issues);
   const existingTitles = new Set((p.tasks || []).map(t => t.title));
@@ -694,6 +860,7 @@ clearBtn?.addEventListener("click", () => {
   if (questionsList) questionsList.innerHTML = "";
   if (actionsList) actionsList.innerHTML = "";
   if (tasksList) tasksList.innerHTML = "";
+  if (webRisksList) webRisksList.innerHTML = "";
 });
 
 // Projects
@@ -736,7 +903,7 @@ addLogBtn?.addEventListener("click", () => {
   const data = loadData();
   const p = data.projects[data.currentProjectId];
 
-  const attUrl = (logAttachUrl?.value || "").trim();
+  const attUrl = safeUrl(logAttachUrl?.value || "");
   const attMemo = (logAttachMemo?.value || "").trim();
   const attachments = [];
   if (attUrl) attachments.push({ url: attUrl, memo: attMemo || "添付" });
@@ -809,7 +976,7 @@ btnAddDateRow?.addEventListener("click", () => {
   addFilterLog("date_add");
 });
 
-// ✅ 初期行にもイベント付与（HTML内の1行目）
+// ✅ 初期行にもイベント付与
 if (dateRows) {
   const first = dateRows.querySelector(".dateRow");
   if (first) attachDateRowEvents(first);
@@ -822,7 +989,6 @@ f_reset?.addEventListener("click", () => {
   if (f_category) f_category.value = "";
   if (f_status) f_status.value = "";
 
-  // 期間（複数）もリセット：1行だけ残す
   if (dateRows) {
     dateRows.innerHTML = "";
     addDateRow("", "");
