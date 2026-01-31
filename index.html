@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>権利処理・管理システム (GitHub Pages)</title>
+  <!-- キャッシュ対策：数字は適当に更新してOK -->
   <link rel="stylesheet" href="style.css?v=20260202">
 </head>
 <body>
@@ -16,15 +17,27 @@
     <!-- ✅ ダッシュボード + 入力テンプレ -->
     <section class="card">
       <h2 style="margin-top:12px;">案件ダッシュボード</h2>
+
       <div class="dash">
-        <div class="kpi"><div class="k">要確認</div><div class="v" id="kpiNeeds">0</div></div>
-        <div class="kpi"><div class="k">対応中</div><div class="v" id="kpiDoing">0</div></div>
-        <div class="kpi"><div class="k">完了</div><div class="v" id="kpiDone">0</div></div>
+        <div class="kpi">
+          <div class="k">要確認</div>
+          <div class="v" id="kpiNeeds">0</div>
+        </div>
+        <div class="kpi">
+          <div class="k">対応中</div>
+          <div class="v" id="kpiDoing">0</div>
+        </div>
+        <div class="kpi">
+          <div class="k">完了</div>
+          <div class="v" id="kpiDone">0</div>
+        </div>
       </div>
 
       <div class="progressWrap">
         <div class="progressLabel">進捗（完了率）: <span id="progressPct">0%</span></div>
-        <div class="progressBar"><div id="progressFill" class="progressFill" style="width:0%"></div></div>
+        <div class="progressBar">
+          <div id="progressFill" class="progressFill" style="width:0%"></div>
+        </div>
       </div>
 
       <hr />
@@ -46,7 +59,7 @@
 
       <div class="row">
         <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
-        <button type="button" class="ghost" id="btnResetTemplate">テンプレをリセット</button>
+        <button type="button" class="ghost danger" id="btnResetTemplate">テンプレをリセット</button>
       </div>
 
       <div class="hint">
@@ -54,14 +67,14 @@
       </div>
     </section>
 
-    <!-- 入力→解析 -->
+    <!-- ✅ 入力→解析 -->
     <section class="card">
       <h2>① 台本 / 演出メモ（入力）</h2>
-      <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。"></textarea>
+      <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。&#10;参考：https://example.com"></textarea>
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
-        <button type="button" class="ghost" id="clearBtn">入力を消す</button>
+        <button type="button" class="ghost danger" id="clearBtn">入力を消す</button>
       </div>
 
       <h3>② 抽出された論点（候補）</h3>
@@ -87,7 +100,7 @@
       </div>
     </section>
 
-    <!-- 案件＋ログ -->
+    <!-- ✅ 案件＋ログ -->
     <section class="card" style="grid-column:1/-1;">
       <h2>③ 案件（Project）</h2>
 
@@ -98,7 +111,7 @@
 
       <div class="row">
         <select id="projectSelect" class="grow"></select>
-        <button type="button" class="ghost" id="deleteProjectBtn">案件削除</button>
+        <button type="button" class="ghost danger" id="deleteProjectBtn">案件削除</button>
       </div>
 
       <hr />
@@ -142,7 +155,7 @@
           </div>
         </div>
 
-        <!-- ✅ ここが「複数期間」 -->
+        <!-- ✅ 期間（複数） -->
         <div class="grid4" style="margin-top:10px;">
           <div style="grid-column:1/-1;">
             <label>期間（複数追加できます）</label>
@@ -153,25 +166,30 @@
                 <input class="f_from" type="date" />
                 <span class="dateSep">〜</span>
                 <input class="f_to" type="date" />
-                <button type="button" class="ghost btnDelDate" title="この期間を削除">×</button>
+                <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
               </div>
             </div>
 
             <div class="row" style="margin-top:10px;">
-              <button type="button" class="ghost" id="btnAddDateRow">＋期間を追加</button>
-              <button type="button" class="ghost" id="f_reset">フィルタ解除</button>
+              <!-- ✅ ここを緑（add / 期間追加）にしたい -->
+              <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
+              <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
             </div>
 
             <div class="hint" style="margin-top:6px;">
               ※複数期間は「どれか1つでも一致（OR）」で絞り込みます。
             </div>
+
+            <!-- ✅ 互換用（非表示） -->
+            <input id="f_from" type="date" style="display:none" />
+            <input id="f_to" type="date" style="display:none" />
           </div>
         </div>
       </div>
 
       <hr />
 
-      <!-- 追加フォーム -->
+      <!-- ✅ 追加フォーム -->
       <div class="grid2">
         <div>
           <label>要素</label>
@@ -232,8 +250,9 @@
       </div>
 
       <div class="row" style="margin-top:12px;">
-        <button type="button" id="addLogBtn">ログ追加</button>
-        <button type="button" class="ghost" id="clearLogsBtn">ログ全削除</button>
+        <!-- ✅ ここを緑（ログ追加）にしたい -->
+        <button type="button" class="success" id="addLogBtn">ログ追加</button>
+        <button type="button" class="ghost danger" id="clearLogsBtn">ログ全削除</button>
       </div>
 
       <h3 style="margin-top:14px;">ログ一覧</h3>
@@ -249,7 +268,6 @@
     <small>© Stage Ethics Demo / GitHub Pages only</small>
   </footer>
 
-  <!-- キャッシュが残ると反映されないので、必要なら ?v= を更新してください -->
   <script src="app.js?v=20260202"></script>
 </body>
 </html>
