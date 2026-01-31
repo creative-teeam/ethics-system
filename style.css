@@ -174,7 +174,7 @@ button.danger {
 }
 button.danger:hover { background: #c0392b; }
 
-/* 強制色（色が変わらない対策） */
+/* ✅ 強制色（色が変わらない対策） */
 #btnAddDateRow,
 #addLogBtn {
   background: #2ecc71 !important;
@@ -330,7 +330,7 @@ button.danger:hover { background: #c0392b; }
 .dateSep { color: #666; }
 
 /* ===============================
-   ✅ Web Risk Panel（検索リンクが“確実に見える”）
+   Web Risk Panel
 =============================== */
 .webrisk {
   margin-top: 10px;
@@ -358,7 +358,6 @@ button.danger:hover { background: #c0392b; }
   margin-bottom: 8px;
 }
 
-/* ✅ リンクの見た目を強制 */
 .webrisk a,
 .webrisk a:visited {
   color: #1f49ff !important;
