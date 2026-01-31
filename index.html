@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>権利処理・管理システム</title>
 
-  <!-- ✅ GitHub Pages キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-2">
+  <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
+  <link rel="stylesheet" href="style.css?v=20260202-3">
 </head>
 <body>
   <header class="wrap">
@@ -69,7 +69,7 @@
     <!-- 右：入力→解析 -->
     <section class="card">
       <h2>① 台本 / 演出メモ（自由記述）</h2>
-      <textarea id="inputText" placeholder="例：配信します。既存曲をBGMで使います。台本で原作の一部を引用します。&#10;参考：https://example.com"></textarea>
+      <textarea id="inputText" placeholder="例：SNSで告知画像を使う。衣装は既製品を改造。舞台美術に有名キャラのロゴを入れたい。"></textarea>
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
@@ -96,17 +96,13 @@
 
       <hr style="margin-top:14px;" />
 
-      <!-- ✅ ここが「検索リンクが出る場所」です（必須） -->
       <h3>③ 自由記述からのリスク候補（Webで根拠確認）</h3>
       <div class="hint">
-        ※GitHub Pages（静的）では他サイト本文を直接取得できないことが多いので、まず検索リンクを出します。<br>
+        ※静的サイトでは他サイト本文を直接取得できないため、まず検索リンクを出します。<br>
         ※見つけたURLは「添付URLに反映」でログ欄の添付URLへ入ります。
       </div>
 
-      <!-- ✅ JSがここにカードを差し込みます -->
       <div id="webRisksList" class="webrisk"></div>
-
-      <!-- ✅ JSエラー時の表示場所 -->
       <div id="webRisksError" class="errorBox" style="display:none;"></div>
     </section>
 
@@ -214,7 +210,7 @@
       </div>
 
       <label style="margin-top:10px;">論点（issue）</label>
-      <textarea id="logIssue" placeholder="例：配信/収録の権利範囲を上演と分けて確認する"></textarea>
+      <textarea id="logIssue" placeholder="例：SNS告知画像の素材出所（写真/フォント/ロゴ）を確認"></textarea>
 
       <div class="grid4" style="margin-top:10px;">
         <div>
@@ -247,7 +243,7 @@
         </div>
         <div>
           <label>添付メモ（任意）</label>
-          <input id="logAttachMemo" placeholder="例：引用ルール、配信許諾の解説ページ など" />
+          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、フォント利用条件 など" />
         </div>
       </div>
 
@@ -259,7 +255,7 @@
       <h3 style="margin-top:14px;">ログ一覧</h3>
       <div id="logsTable" class="table"></div>
 
-      <div class="hint">※保存先はブラウザ内（LocalStorage）です。別PC・別ブラウザでは共有されません。</div>
+      <div class="hint">※保存先はブラウザ内（LocalStorage）です。</div>
     </section>
   </main>
 
@@ -267,7 +263,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <!-- ✅ キャッシュ対策 -->
-  <script src="app.js?v=20260202-2"></script>
+  <script src="app.js?v=20260202-3"></script>
 </body>
 </html>
