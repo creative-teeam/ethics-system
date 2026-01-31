@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>権利処理・管理システム (GitHub Pages)</title>
-  <!-- キャッシュ対策：数字は適当に更新してOK -->
+  <!-- キャッシュ対策：更新するたび数字を変えてください -->
   <link rel="stylesheet" href="style.css?v=20260202">
 </head>
 <body>
@@ -95,14 +95,23 @@
         <ul id="tasksList" class="bullets"></ul>
       </details>
 
+      <hr style="margin-top:14px;" />
+
+      <!-- ✅ NEW: 自由記述からの「Webで確認すべきリスク候補」 -->
+      <h3>③ 自由記述からのリスク候補（Webで根拠確認）</h3>
       <div class="hint">
-        ※AIではなく「ルールベース」で材料を出します。後からLLMに差し替え可能。
+        ※GitHub Pagesでは自動スクレイピングができないため、検索リンクを生成します。見つけたURLを貼ると「添付URL」へ入れられます。
+      </div>
+      <div id="webRisksList" class="webrisk"></div>
+
+      <div class="hint" style="margin-top:10px;">
+        ※「添付URLに反映」すると、下のログ欄の「添付URL」に自動で入ります。
       </div>
     </section>
 
     <!-- ✅ 案件＋ログ -->
     <section class="card" style="grid-column:1/-1;">
-      <h2>③ 案件（Project）</h2>
+      <h2>④ 案件（Project）</h2>
 
       <div class="row">
         <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
@@ -116,7 +125,7 @@
 
       <hr />
 
-      <h2>④ ログ（合意形成ログ）</h2>
+      <h2>⑤ ログ（合意形成ログ）</h2>
 
       <!-- ✅ フィルタ -->
       <div class="filters">
@@ -161,7 +170,6 @@
             <label>期間（複数追加できます）</label>
 
             <div id="dateRows" class="dateRows">
-              <!-- 1行目（初期） -->
               <div class="dateRow">
                 <input class="f_from" type="date" />
                 <span class="dateSep">〜</span>
@@ -171,7 +179,6 @@
             </div>
 
             <div class="row" style="margin-top:10px;">
-              <!-- ✅ ここを緑（add / 期間追加）にしたい -->
               <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
               <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
             </div>
@@ -180,7 +187,7 @@
               ※複数期間は「どれか1つでも一致（OR）」で絞り込みます。
             </div>
 
-            <!-- ✅ 互換用（非表示） -->
+            <!-- 互換用（非表示） -->
             <input id="f_from" type="date" style="display:none" />
             <input id="f_to" type="date" style="display:none" />
           </div>
@@ -240,17 +247,16 @@
       <!-- ✅ 添付 -->
       <div class="grid2" style="margin-top:10px;">
         <div>
-          <label>添付URL（任意：同意書/資料リンク）</label>
+          <label>添付URL（任意：根拠URLなど）</label>
           <input id="logAttachUrl" placeholder="https://..." />
         </div>
         <div>
           <label>添付メモ（任意）</label>
-          <input id="logAttachMemo" placeholder="例：出演者同意書PDF、JASRAC申請控え など" />
+          <input id="logAttachMemo" placeholder="例：引用ルール、配信許諾の解説ページ など" />
         </div>
       </div>
 
       <div class="row" style="margin-top:12px;">
-        <!-- ✅ ここを緑（ログ追加）にしたい -->
         <button type="button" class="success" id="addLogBtn">ログ追加</button>
         <button type="button" class="ghost danger" id="clearLogsBtn">ログ全削除</button>
       </div>
