@@ -9,12 +9,12 @@
 }
 
 /* ===============================
-   Background
+   Background  ✅ 淡い紫
 =============================== */
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff;   /* 淡い紫 */
+  background: #f3efff !important;   /* ← 淡い紫（強制） */
   color: #1a1a2e;
 }
 
@@ -116,6 +116,8 @@ textarea::placeholder {
   align-items: center;
 }
 
+.grow { flex: 1; }
+
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -128,12 +130,8 @@ textarea::placeholder {
   gap: 10px;
 }
 
-.grow {
-  flex: 1 1 auto;
-}
-
 /* ===============================
-   Buttons (default)
+   Buttons (base)
 =============================== */
 button {
   padding: 10px 14px;
@@ -146,9 +144,7 @@ button {
   transition: 0.2s;
 }
 
-button:hover {
-  opacity: 0.92;
-}
+button:hover { opacity: 0.92; }
 
 /* ghost = サブボタン */
 button.ghost {
@@ -157,28 +153,41 @@ button.ghost {
   border: 1px solid #cfcfff;
 }
 
+/* ✅ success（緑） */
+button.success {
+  background: #2ecc71;
+  color: #fff;
+}
+button.success:hover {
+  background: #27ae60;
+}
+
+/* ✅ danger（赤） */
+button.danger {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+}
+button.danger:hover {
+  background: #c0392b;
+}
+
 /* ===============================
-   Green buttons (追加系)
-   - 「＋期間を追加」「ログ追加」を緑に
-   ※ ghost が付いても上書きするように強めに指定
+   強制色指定（IDで固定：色が変わらない対策）
 =============================== */
-button#addLogBtn,
-button#btnAddDateRow,
-button.ghost#btnAddDateRow {
+/* 緑：期間追加 / ログ追加 */
+#btnAddDateRow,
+#addLogBtn {
   background: #2ecc71 !important;
   color: #fff !important;
   border: none !important;
 }
-
-button#addLogBtn:hover,
-button#btnAddDateRow:hover,
-button.ghost#btnAddDateRow:hover {
+#btnAddDateRow:hover,
+#addLogBtn:hover {
   background: #27ae60 !important;
 }
 
-/* ===============================
-   Red buttons (削除・リセット系)
-=============================== */
+/* 赤：削除・リセット系 */
 #deleteProjectBtn,
 #clearLogsBtn,
 #clearBtn,
@@ -189,7 +198,6 @@ button.ghost#btnAddDateRow:hover {
   color: #fff !important;
   border: none !important;
 }
-
 #deleteProjectBtn:hover,
 #clearLogsBtn:hover,
 #clearBtn:hover,
@@ -202,15 +210,11 @@ button.ghost#btnAddDateRow:hover {
 /* ===============================
    Progress
 =============================== */
-.progressWrap {
-  margin-top: 10px;
-}
-
+.progressWrap { margin-top: 10px; }
 .progressLabel {
   font-size: 0.9rem;
   margin-bottom: 6px;
 }
-
 .progressBar {
   width: 100%;
   height: 10px;
@@ -218,7 +222,6 @@ button.ghost#btnAddDateRow:hover {
   border-radius: 999px;
   overflow: hidden;
 }
-
 .progressFill {
   height: 100%;
   background: #2ecc71;  /* 進捗メーター 緑 */
@@ -282,13 +285,8 @@ button.ghost#btnAddDateRow:hover {
   border: 1px solid #e0e0ff;
 }
 
-.bullets {
-  padding-left: 20px;
-}
-
-.bullets li {
-  margin-bottom: 6px;
-}
+.bullets { padding-left: 20px; }
+.bullets li { margin-bottom: 6px; }
 
 /* ===============================
    Tables (logs)
@@ -303,7 +301,6 @@ button.ghost#btnAddDateRow:hover {
   display: grid;
   grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 0.5fr;
   gap: 6px;
-  align-items: center;
 }
 
 .rowh {
@@ -323,20 +320,6 @@ button.ghost#btnAddDateRow:hover {
   color: #222;
 }
 
-/* logs内のselect */
-.table select {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #cfcfff;
-  background: #fff;
-}
-
-/* logs内のリンク */
-.table a {
-  color: #2f4bd6;
-  text-decoration: underline;
-}
-
 /* ===============================
    Filters
 =============================== */
@@ -345,13 +328,6 @@ button.ghost#btnAddDateRow:hover {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #e0e0ff;
-}
-
-.filters label {
-  display: block;
-  font-size: 0.85rem;
-  color: #444;
-  margin-bottom: 6px;
 }
 
 /* ===============================
@@ -370,13 +346,7 @@ button.ghost#btnAddDateRow:hover {
   gap: 6px;
 }
 
-.dateRow input[type="date"] {
-  padding: 8px;
-}
-
-.dateSep {
-  color: #666;
-}
+.dateSep { color: #666; }
 
 /* ===============================
    Misc
@@ -390,24 +360,13 @@ button.ghost#btnAddDateRow:hover {
 .check {
   font-size: 0.9rem;
   color: #333;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 /* ===============================
    Responsive
 =============================== */
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rowh, .rowd {
-    grid-template-columns: 1fr;
-  }
-
-  .dateRow {
-    flex-wrap: wrap;
-  }
+  .grid { grid-template-columns: 1fr; }
+  .rowh, .rowd { grid-template-columns: 1fr; }
+  .row { flex-wrap: wrap; }
 }
