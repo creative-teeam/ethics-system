@@ -9,12 +9,12 @@
 }
 
 /* ===============================
-   Background  ✅ 淡い紫
+   Background (淡い紫)
 =============================== */
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff !important;   /* ← 淡い紫（強制） */
+  background: #f3efff !important;
   color: #1a1a2e;
 }
 
@@ -139,14 +139,13 @@ button {
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
-  background: #4b5cff;   /* 通常ボタン（青） */
+  background: #4b5cff;
   color: #fff;
   transition: 0.2s;
 }
 
 button:hover { opacity: 0.92; }
 
-/* ghost = サブボタン */
 button.ghost {
   background: #eaeaff;
   color: #333;
@@ -158,9 +157,7 @@ button.success {
   background: #2ecc71;
   color: #fff;
 }
-button.success:hover {
-  background: #27ae60;
-}
+button.success:hover { background: #27ae60; }
 
 /* ✅ danger（赤） */
 button.danger {
@@ -168,14 +165,9 @@ button.danger {
   color: #fff;
   border: none;
 }
-button.danger:hover {
-  background: #c0392b;
-}
+button.danger:hover { background: #c0392b; }
 
-/* ===============================
-   強制色指定（IDで固定：色が変わらない対策）
-=============================== */
-/* 緑：期間追加 / ログ追加 */
+/* 強制色（色が変わらない対策） */
 #btnAddDateRow,
 #addLogBtn {
   background: #2ecc71 !important;
@@ -187,7 +179,6 @@ button.danger:hover {
   background: #27ae60 !important;
 }
 
-/* 赤：削除・リセット系 */
 #deleteProjectBtn,
 #clearLogsBtn,
 #clearBtn,
@@ -211,10 +202,8 @@ button.danger:hover {
    Progress
 =============================== */
 .progressWrap { margin-top: 10px; }
-.progressLabel {
-  font-size: 0.9rem;
-  margin-bottom: 6px;
-}
+.progressLabel { font-size: 0.9rem; margin-bottom: 6px; }
+
 .progressBar {
   width: 100%;
   height: 10px;
@@ -222,9 +211,10 @@ button.danger:hover {
   border-radius: 999px;
   overflow: hidden;
 }
+
 .progressFill {
   height: 100%;
-  background: #2ecc71;  /* 進捗メーター 緑 */
+  background: #2ecc71;
   transition: width 0.3s;
 }
 
@@ -245,16 +235,8 @@ button.danger:hover {
   text-align: center;
 }
 
-.kpi .k {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.kpi .v {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #333;
-}
+.kpi .k { font-size: 0.8rem; color: #666; }
+.kpi .v { font-size: 1.4rem; font-weight: bold; color: #333; }
 
 /* ===============================
    Tags
@@ -272,10 +254,7 @@ button.danger:hover {
 /* ===============================
    Lists
 =============================== */
-.issues {
-  list-style: none;
-  margin-top: 10px;
-}
+.issues { list-style: none; margin-top: 10px; }
 
 .issues li {
   background: #f8f8ff;
@@ -303,10 +282,7 @@ button.danger:hover {
   gap: 6px;
 }
 
-.rowh {
-  font-weight: bold;
-  color: #444;
-}
+.rowh { font-weight: bold; color: #444; }
 
 .rowd {
   background: #fafaff;
@@ -315,10 +291,7 @@ button.danger:hover {
   border: 1px solid #e0e0ff;
 }
 
-.cell {
-  font-size: 0.85rem;
-  color: #222;
-}
+.cell { font-size: 0.85rem; color: #222; }
 
 /* ===============================
    Filters
@@ -349,6 +322,54 @@ button.danger:hover {
 .dateSep { color: #666; }
 
 /* ===============================
+   Web Risk Panel
+=============================== */
+.webrisk {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.webriskCard {
+  border: 1px solid #e0e0ff;
+  background: #fafaff;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.webriskTitle {
+  font-weight: 700;
+  color: #22224a;
+  margin-bottom: 6px;
+}
+
+.webriskMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.webriskActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.webriskActions input {
+  flex: 1;
+  min-width: 220px;
+}
+
+a.weblink {
+  color: #2b3cff;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+/* ===============================
    Misc
 =============================== */
 .hint {
@@ -357,10 +378,7 @@ button.danger:hover {
   margin-top: 6px;
 }
 
-.check {
-  font-size: 0.9rem;
-  color: #333;
-}
+.check { font-size: 0.9rem; color: #333; }
 
 /* ===============================
    Responsive
