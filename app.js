@@ -1,4 +1,3 @@
-// app.js（LocalStorage版：期間（複数） + フィルタ操作ログ + 自由記述→検索リンク生成）
 const STORE_KEY = "stageEthicsData_v1";
 
 // --- DOM ---
@@ -56,7 +55,9 @@ const kpiDone = document.getElementById("kpiDone");
 const progressPct = document.getElementById("progressPct");
 const progressFill = document.getElementById("progressFill");
 
-// --- utils ---
+// -------------------
+// utils
+// -------------------
 function uid() {
   return crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
 }
@@ -75,8 +76,7 @@ function safeUrl(u) {
   const t = (u || "").trim();
   if (!t) return "";
   try {
-    const url = new URL(t);
-    return url.toString();
+    return new URL(t).toString();
   } catch {
     return "";
   }
@@ -92,13 +92,32 @@ function clearWebError() {
   webRisksError.textContent = "";
 }
 
-// --- Data model ---
+// -------------------
+// Category label helper（タグ表示用）
+// -------------------
+function categoryLabel(cat) {
+  const map = {
+    copyright: "著作権",
+    privacy: "プライバシー",
+    ethics: "倫理",
+    safety: "安全",
+    bias: "偏り",
+    art: "美術",
+    costume: "衣装",
+    sns: "SNS",
+  };
+  return map[cat] || cat || "";
+}
+
+// -------------------
+// Data model
+// -------------------
 function loadData() {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.3.2",
+      schemaVersion: "2.4.0",
       currentProjectId: firstId,
       projects: {
         [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [], filterLogs: [] }
@@ -142,43 +161,50 @@ function migrateIfNeeded(data) {
     });
   });
 
-  data.schemaVersion = "2.3.2";
+  data.schemaVersion = "2.4.0";
   return data;
 }
 
-// --- severity推定 ---
+// -------------------
+// severity推定（美術/衣装/SNSも中くらい扱い）
+// -------------------
 function estimateSeverity(element, category, issueText) {
   const t = (issueText || "").toLowerCase();
   if (category === "safety") return "high";
   if (category === "privacy" && (t.includes("未成年") || t.includes("楽屋") || t.includes("個人特定"))) return "high";
-  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲") || t.includes("引用") || t.includes("ロゴ") || t.includes("衣装") || t.includes("美術"))) return "medium";
+  if (category === "art" || category === "costume" || category === "sns") return "medium";
+  if (category === "copyright") return "medium";
   if (category === "ethics" && (t.includes("実在") || t.includes("事件") || t.includes("災害"))) return "medium";
   return "low";
 }
 
-// --- 論点抽出（美術/衣装/SNS追加） ---
+// ===================================================
+// ✅ 論点抽出：美術/衣装/SNSを「カテゴリ」にして返す
+//  element = 台本/演出メモ上の観点（脚本/演出/映像等）
+//  category = 著作権/…/美術/衣装/SNS
+// ===================================================
 function extractIssues(text) {
   const t = (text || "").toLowerCase();
   const issues = [];
   const add = (element, category, issue) => issues.push({ element, category, issue });
 
-  // 映像配信
+  // 配信/収録
   if (text.includes("配信") || text.includes("収録") || t.includes("youtube") || t.includes("tiktok") || text.includes("アーカイブ")) {
     add("映像", "copyright", "配信/収録がある場合、上演と配信で必要な許諾（音楽・映像素材・実演/肖像）が分かれる可能性があります。形態ごとに権利処理を整理してください。");
     add("映像", "privacy", "舞台裏/楽屋/未成年の映り込みや個人特定のリスクがあります。撮影範囲・同意取得・公開範囲を設計してください。");
   }
 
   // 音楽
-  if (text.includes("既存曲") || text.includes("カバー") || text.includes("BGM") || text.includes("音源") || text.includes("歌")) {
+  if (text.includes("既存曲") || text.includes("カバー") || text.includes("bgm") || text.includes("音源") || text.includes("歌")) {
     add("音楽", "copyright", "既存曲の利用は『上演』と『配信/録画』で許諾が変わることがあります。使用形態・区間・音源種類（生演奏/録音）を分けて確認してください。");
   }
 
-  // 台本/引用
+  // 台本/引用/脚色
   if (text.includes("台本") || text.includes("引用") || text.includes("原作") || text.includes("脚色") || text.includes("翻案")) {
     add("脚本", "copyright", "台本の引用・翻案（脚色/改変）を行う場合、引用要件や許諾が必要になる可能性があります。出典・範囲・改変内容を整理してください。");
   }
 
-  // 実在事件
+  // 実在事件/災害
   if (text.includes("実在") || text.includes("事件") || text.includes("災害")) {
     add("脚本", "ethics", "実在の事件/災害を扱う場合、当事者性・再トラウマ化・誤解や誹謗中傷の誘発リスクを評価し、注意書きや監修の導入を検討してください。");
   }
@@ -193,31 +219,34 @@ function extractIssues(text) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
 
-  // ✅ 美術（舞台美術・小道具・ロゴ・キャラ・背景）
-  if (
+  // ✅ 美術（カテゴリ=art）
+  const hitArt =
     text.includes("美術") || text.includes("舞台美術") || text.includes("大道具") || text.includes("小道具") ||
-    text.includes("背景") || text.includes("看板") || text.includes("ロゴ") || text.includes("キャラ") ||
-    text.includes("キャラクター") || text.includes("ポスター") || text.includes("写真") || text.includes("画像")
-  ) {
-    add("美術", "copyright", "舞台美術・小道具・背景・ロゴ・写真素材などに第三者の著作物/商標が含まれると、権利侵害リスクがあります。素材の出所（自作/購入/フリー/許諾）を整理してください。");
+    text.includes("背景") || text.includes("看板") || text.includes("ロゴ") ||
+    text.includes("キャラ") || text.includes("キャラクター") ||
+    text.includes("ポスター") || text.includes("写真") || text.includes("画像");
+  if (hitArt) {
+    add("演出", "art", "舞台美術・小道具・背景・ロゴ・写真素材などに第三者の著作物/商標が含まれると、権利侵害リスクがあります。素材の出所（自作/購入/フリー/許諾）を整理してください。");
   }
 
-  // ✅ 衣装（既製品改造・ロゴ・ブランド・キャラ衣装）
-  if (
-    text.includes("衣装") || text.includes("コスプレ") || text.includes("ユニフォーム") || text.includes("制服") ||
-    text.includes("ブランド") || text.includes("商標") || text.includes("ロゴ")
-  ) {
-    add("衣装", "copyright", "衣装にブランドロゴ/キャラクターデザイン/既製品の意匠が含まれる場合、権利や利用条件の確認が必要です（撮影・配信・グッズ化等でリスク増）。");
+  // ✅ 衣装（カテゴリ=costume）
+  const hitCostume =
+    text.includes("衣装") || text.includes("コスプレ") || text.includes("ユニフォーム") ||
+    text.includes("制服") || text.includes("ブランド") || text.includes("商標") || text.includes("ロゴ");
+  if (hitCostume) {
+    add("演出", "costume", "衣装にブランドロゴ/キャラクターデザイン/既製品の意匠が含まれる場合、撮影・配信・SNSでの露出によりリスクが増えます。公開範囲と利用条件を確認してください。");
   }
 
-  // ✅ SNS（告知・投稿・サムネ・画像・BGM・ハッシュタグ）
-  if (
-    text.includes("sns") || text.includes("Twitter") || text.includes("X") || text.includes("instagram") ||
-    text.includes("tiktok") || text.includes("告知") || text.includes("投稿") || text.includes("サムネ") ||
-    text.includes("リール") || text.includes("ショート") || text.includes("ハッシュタグ")
-  ) {
-    add("SNS", "copyright", "SNS告知で画像/フォント/音源/写真/映像素材を使う場合、素材ライセンスやプラットフォーム規約により利用条件が変わります。告知素材の出所と利用範囲を確認してください。");
-    add("SNS", "privacy", "SNS投稿は拡散力が高く、未成年・客席・楽屋の映り込み、個人特定のリスクが上がります。公開範囲/撮影ルール/同意の運用を定義してください。");
+  // ✅ SNS（カテゴリ=sns）
+  const low = (text || "").toLowerCase();
+  const hitSNS =
+    low.includes("sns") || low.includes("twitter") || low.includes("instagram") || low.includes("tiktok") ||
+    text.includes("告知") || text.includes("投稿") || text.includes("サムネ") || text.includes("リール") || text.includes("ショート") ||
+    text.includes("ハッシュタグ") || text.includes("X");
+  if (hitSNS) {
+    add("演出", "sns", "SNS告知で画像/フォント/音源/写真/映像素材を使う場合、素材ライセンスやプラットフォーム規約により利用条件が変わります。素材の出所と利用範囲を確認してください。");
+    // SNS由来のプライバシーも一緒に出す（カテゴリはprivacyのまま）
+    add("演出", "privacy", "SNS投稿は拡散力が高く、未成年・客席・楽屋の映り込み、個人特定のリスクが上がります。公開範囲/撮影ルール/同意の運用を定義してください。");
   }
 
   if (issues.length === 0) {
@@ -226,7 +255,9 @@ function extractIssues(text) {
   return issues;
 }
 
-// --- 質問生成（美術/衣装/SNS追加） ---
+// -------------------
+// 質問生成（カテゴリ追加に合わせて）
+// -------------------
 function generateQuestions(text) {
   const t = text || "";
   const low = t.toLowerCase();
@@ -248,9 +279,9 @@ function generateQuestions(text) {
     push("出典表示（作品名/著者/出版社など）は用意していますか？");
     push("翻案（脚色）や改変の範囲はどの程度ですか？");
   }
-  if (t.includes("美術") || t.includes("ロゴ") || t.includes("小道具") || t.includes("背景") || t.includes("画像") || t.includes("写真")) {
+  if (t.includes("美術") || t.includes("小道具") || t.includes("背景") || t.includes("画像") || t.includes("写真") || t.includes("ロゴ")) {
     push("美術・小道具・背景の素材は自作/購入/フリー/許諾のどれですか？出所を一覧化できますか？");
-    push("ロゴやキャラクターが入る場合、撮影/配信/告知物に載る前提ですか？");
+    push("ロゴやキャラクターが入る場合、撮影/配信/SNSに載る前提ですか？");
   }
   if (t.includes("衣装") || t.includes("コスプレ") || t.includes("ブランド") || t.includes("ロゴ")) {
     push("衣装は自作ですか？既製品改造ですか？ブランドロゴや意匠は含みますか？");
@@ -270,15 +301,28 @@ function generateQuestions(text) {
   return q;
 }
 
-// --- 対応案 ---
+// -------------------
+// 対応案（カテゴリに art/costume/sns を追加）
+// -------------------
 function generateActionTemplates(issues) {
   const out = [];
   const push = (s) => { if (!out.includes(s)) out.push(s); };
 
   issues.forEach((it) => {
     if (it.category === "copyright") {
-      push("権利処理の表を作成（上演/配信/録画/SNS別に：楽曲、音源、映像素材、台本、美術、衣装、写真/フォント/ロゴ）");
+      push("権利処理の表を作成（上演/配信/録画/SNS別に：楽曲、音源、映像素材、台本、写真/フォント/ロゴ）");
       push("利用許諾の範囲を文章化（期間・地域・公開形態・二次利用）");
+    }
+    if (it.category === "art") {
+      push("美術・小道具・背景の素材出所を一覧化（自作/購入/フリー/許諾）");
+      push("ロゴ/キャラ/写真素材がある場合、撮影/配信/SNSへの露出前提で権利条件を確認");
+    }
+    if (it.category === "costume") {
+      push("衣装のロゴ/意匠/キャラ要素の有無を整理し、公開範囲（撮影/配信/SNS）を確認");
+    }
+    if (it.category === "sns") {
+      push("SNS告知素材（写真/フォント/音源/テンプレ）の利用条件を確認（商用可否・改変可否・クレジット要否）");
+      push("投稿前のチェック手順（担当/確認項目/承認）を決める");
     }
     if (it.category === "privacy") {
       push("同意取得フロー（出演者/保護者/スタッフ/映り込み）を決める");
@@ -296,7 +340,9 @@ function generateActionTemplates(issues) {
   return out;
 }
 
-// --- Tasks ---
+// -------------------
+// Tasks（カテゴリに追従）
+// -------------------
 function generateTasksFromIssues(issues) {
   const tasks = [];
   const add = (title) => tasks.push({ id: uid(), title, status: "todo", created_at: nowISO() });
@@ -309,14 +355,14 @@ function generateTasksFromIssues(issues) {
     if (it.category === "copyright" && it.element === "脚本") {
       add("引用/翻案の範囲（台本）を整理して出典表示を準備");
     }
-    if (it.category === "copyright" && it.element === "美術") {
+    if (it.category === "art") {
       add("美術・小道具・背景の素材出所一覧（自作/購入/フリー/許諾）を作成");
     }
-    if (it.category === "copyright" && it.element === "衣装") {
+    if (it.category === "costume") {
       add("衣装のロゴ/意匠/キャラ要素の有無を整理し、公開範囲（撮影/配信/SNS）を確認");
     }
-    if (it.category === "copyright" && it.element === "SNS") {
-      add("SNS告知素材（写真/フォント/音源/映像）の利用条件を確認");
+    if (it.category === "sns") {
+      add("SNS告知素材（写真/フォント/音源/テンプレ）の利用条件を確認");
     }
     if (it.category === "privacy") {
       add("撮影範囲と掲示文を確定");
@@ -330,9 +376,9 @@ function generateTasksFromIssues(issues) {
   return tasks;
 }
 
-// ========================
-// ✅ 自由記述 → Web検索リンク（美術/衣装/SNS追加）
-// ========================
+// ===================================================
+// ✅ Web検索リンク生成（カテゴリ art/costume/sns に追従）
+// ===================================================
 function extractUrlsFromText(text) {
   const urls = [];
   const re = /(https?:\/\/[^\s<>"'）\]]+)/g;
@@ -359,7 +405,7 @@ function detectWebRiskCandidates(text) {
     items.push({ title, element, category, reason, query });
   };
 
-  // 配信
+  // 配信/収録
   if (t.includes("配信") || t.includes("収録") || t.includes("アーカイブ") || low.includes("youtube") || low.includes("tiktok")) {
     add(
       "配信/収録の許諾（上演とは別）",
@@ -392,51 +438,51 @@ function detectWebRiskCandidates(text) {
     );
   }
 
-  // ✅ 美術
-  if (
+  // ✅ 美術（category=art）
+  const hitArt =
     t.includes("美術") || t.includes("舞台美術") || t.includes("大道具") || t.includes("小道具") ||
-    t.includes("背景") || t.includes("看板") || t.includes("ロゴ") || t.includes("キャラ") ||
-    t.includes("キャラクター") || t.includes("ポスター") || t.includes("写真") || t.includes("画像")
-  ) {
+    t.includes("背景") || t.includes("看板") || t.includes("ロゴ") ||
+    t.includes("キャラ") || t.includes("キャラクター") ||
+    t.includes("ポスター") || t.includes("写真") || t.includes("画像");
+  if (hitArt) {
     add(
       "舞台美術・小道具・背景素材（著作権/商標）",
-      "美術",
-      "copyright",
+      "演出",
+      "art",
       "舞台上の美術や小道具に他者の画像・ロゴ・キャラ等が含まれると、撮影/配信/告知で侵害リスクが上がります。素材出所の確認が必要です。",
       "舞台美術 小道具 背景 ロゴ 画像 著作権 商標"
     );
   }
 
-  // ✅ 衣装
-  if (t.includes("衣装") || t.includes("コスプレ") || t.includes("制服") || t.includes("ブランド") || t.includes("ロゴ")) {
+  // ✅ 衣装（category=costume）
+  const hitCostume =
+    t.includes("衣装") || t.includes("コスプレ") || t.includes("制服") || t.includes("ブランド") || t.includes("ロゴ");
+  if (hitCostume) {
     add(
-      "衣装（ブランドロゴ/キャラ衣装）の公開・配信リスク",
-      "衣装",
-      "copyright",
-      "衣装にブランドロゴやキャラ要素がある場合、配信・SNS・物販での利用条件確認が必要になることがあります。",
+      "衣装（ロゴ/意匠/キャラ要素）の公開リスク",
+      "演出",
+      "costume",
+      "衣装にブランドロゴやキャラ要素がある場合、配信・SNSでの露出により利用条件確認が必要になることがあります。",
       "衣装 ブランドロゴ コスプレ 舞台 配信 SNS 権利"
     );
   }
 
-  // ✅ SNS
-  if (low.includes("sns") || t.includes("告知") || t.includes("投稿") || t.includes("サムネ") || low.includes("instagram") || t.includes("X") || t.includes("twitter")) {
+  // ✅ SNS（category=sns）
+  const hitSNS =
+    low.includes("sns") || low.includes("twitter") || low.includes("instagram") || low.includes("tiktok") ||
+    t.includes("告知") || t.includes("投稿") || t.includes("サムネ") || t.includes("リール") || t.includes("ショート") ||
+    t.includes("ハッシュタグ") || t.includes("X");
+  if (hitSNS) {
     add(
       "SNS告知素材（画像/フォント/音源/写真）の利用条件",
-      "SNS",
-      "copyright",
-      "SNSは拡散されやすく、素材ライセンス違反が目立ちやすいです。特にフォント/写真/音源/テンプレ素材の利用条件を確認します。",
+      "演出",
+      "sns",
+      "SNSは拡散されやすく、素材ライセンス違反が目立ちやすいです。フォント/写真/音源/テンプレ素材の利用条件を確認します。",
       "SNS 告知 画像 フォント 音源 写真 利用条件 ライセンス"
-    );
-    add(
-      "SNSでの個人情報・未成年の映り込み",
-      "SNS",
-      "privacy",
-      "SNSは二次拡散されるため、未成年・客席・楽屋の映り込みや個人特定のリスクが高くなります。",
-      "SNS 未成年 映り込み 個人情報 公開 同意書"
     );
   }
 
-  // 未成年
+  // 未成年/舞台裏など
   if (t.includes("未成年") || t.includes("高校生") || t.includes("中学生") || t.includes("子役")) {
     add(
       "未成年の撮影・公開（同意/プライバシー）",
@@ -446,8 +492,6 @@ function detectWebRiskCandidates(text) {
       "未成年 出演 撮影 公開 同意書"
     );
   }
-
-  // 舞台裏
   if (t.includes("楽屋") || t.includes("舞台裏") || t.includes("バックヤード") || t.includes("個人情報")) {
     add(
       "舞台裏/楽屋の映り込み（プライバシー）",
@@ -458,35 +502,12 @@ function detectWebRiskCandidates(text) {
     );
   }
 
-  // 実在事件
-  if (t.includes("実在") || t.includes("事件") || t.includes("災害")) {
-    add(
-      "実在事件/災害題材（倫理・名誉・配慮）",
-      "脚本",
-      "ethics",
-      "当事者性、誤解、名誉毀損・誹謗中傷の誘発リスクを評価し、注意書きや監修を検討します。",
-      "実在 事件 災害 舞台 表現 配慮 注意書き"
-    );
-  }
-
-  // 安全
-  if (t.includes("ストロボ") || t.includes("点滅") || t.includes("爆音") || t.includes("大音量")) {
-    add(
-      "点滅・大音量の注意（安全配慮）",
-      "照明",
-      "safety",
-      "光過敏や体調不良に配慮し、事前注意や回避導線を用意します。",
-      "ストロボ 点滅 注意書き 観客 体調不良 対策"
-    );
-  }
-
-  // ✅ 何も引っかからない時でも検索リンクは必ず出す
   if (items.length === 0) {
     add(
       "一般的な舞台の権利処理チェック（検出不足のため）",
       "全体",
       "ethics",
-      "配信有無・素材出所・改変範囲（脚本/演出/美術/衣装/SNS）の追記で精度が上がります。まず一般チェックから根拠を探します。",
+      "配信有無・素材出所・改変範囲（脚本/演出/美術/衣装/SNS）の追記で精度が上がります。",
       "舞台 権利処理 チェックリスト 台本 美術 衣装 SNS"
     );
   }
@@ -498,7 +519,7 @@ function renderWebRisks(text) {
   clearWebError();
 
   if (!webRisksList) {
-    showWebError("エラー：HTMLに id=\"webRisksList\" が見つかりません。index.htmlに <div id=\"webRisksList\"></div> を入れてください。");
+    showWebError("エラー：HTMLに id=\"webRisksList\" が見つかりません。");
     return;
   }
 
@@ -551,7 +572,7 @@ function renderWebRisks(text) {
         <div class="webriskTitle">${escapeHtml(it.title)}</div>
         <div class="webriskMeta">
           <span class="tag">${escapeHtml(it.element)}</span>
-          <span class="tag">${escapeHtml(it.category)}</span>
+          <span class="tag">${escapeHtml(categoryLabel(it.category) || it.category)}</span>
         </div>
         <div>${escapeHtml(it.reason)}</div>
 
@@ -734,7 +755,7 @@ function applyLogFilters(logs) {
 }
 
 // ------------------------
-// UI render
+// Render
 // ------------------------
 function renderProjects(data) {
   if (!projectSelect) return;
@@ -758,7 +779,7 @@ function renderIssues(issues) {
     li.innerHTML = `
       <div>
         <span class="tag">${escapeHtml(it.element)}</span>
-        <span class="tag">${escapeHtml(it.category)}</span>
+        <span class="tag">${escapeHtml(categoryLabel(it.category))}</span>
       </div>
       <div style="margin-top:6px;">${escapeHtml(it.issue)}</div>
       <div class="row" style="margin-top:10px;">
@@ -767,7 +788,7 @@ function renderIssues(issues) {
     `;
     li.querySelector("button[data-add]").addEventListener("click", () => {
       if (logElement) logElement.value = it.element;
-      if (logCategory) logCategory.value = it.category;
+      if (logCategory) logCategory.value = it.category; // ✅ art/costume/sns が入る
       if (logIssue) logIssue.value = it.issue;
       if (logDecision) logDecision.value = "要確認";
       if (logStatus) logStatus.value = "needs_review";
@@ -820,7 +841,7 @@ function renderLogs(data) {
     row.innerHTML = `
       <div class="cell">
         <span class="tag">${escapeHtml(l.element)}</span>
-        <span class="tag">${escapeHtml(l.category)}</span>
+        <span class="tag">${escapeHtml(categoryLabel(l.category))}</span>
         <span class="tag">sev:${escapeHtml(l.severity || "low")}</span>
       </div>
       <div class="cell">${escapeHtml(l.issue)}</div>
@@ -909,7 +930,9 @@ function renderAll() {
   renderDashboard(data);
 }
 
-// --- Template -> text ---
+// -------------------
+// Template -> text
+// -------------------
 function buildTemplateText() {
   const checks = {
     stream: tpl("t_stream")?.checked,
@@ -950,27 +973,20 @@ analyzeBtn?.addEventListener("click", () => {
 
   renderIssues(issues);
   renderMaterialOutputs(text, issues);
-
-  // ✅ 解析で検索リンク生成
   renderWebRisks(text);
 
   const newTasks = generateTasksFromIssues(issues);
   const existingTitles = new Set((p.tasks || []).map(t => t.title));
-  newTasks.forEach(t => {
-    if (!existingTitles.has(t.title)) p.tasks.push(t);
-  });
+  newTasks.forEach(t => { if (!existingTitles.has(t.title)) p.tasks.push(t); });
 
   saveData(data);
   renderAll();
 });
 
-// ✅ 入力中にも検索リンクを更新
 let memoTimer = null;
 inputText?.addEventListener("input", () => {
   if (memoTimer) clearTimeout(memoTimer);
-  memoTimer = setTimeout(() => {
-    renderWebRisks(inputText.value || "");
-  }, 350);
+  memoTimer = setTimeout(() => renderWebRisks(inputText.value || ""), 350);
 });
 
 clearBtn?.addEventListener("click", () => {
@@ -1034,7 +1050,7 @@ addLogBtn?.addEventListener("click", () => {
     id: uid(),
     at: nowISO(),
     element: logElement?.value || "全体",
-    category: logCategory?.value || "ethics",
+    category: logCategory?.value || "ethics", // ✅ art/costume/snsが保存される
     issue,
     decision: logDecision?.value || "要確認",
     rationale: (logRationale?.value || "").trim(),
