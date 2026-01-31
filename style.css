@@ -58,6 +58,12 @@ footer {
   color: #666;
 }
 
+hr {
+  border: none;
+  border-top: 1px solid #e8e0ff;
+  margin: 14px 0;
+}
+
 /* ===============================
    Cards
 =============================== */
@@ -66,12 +72,6 @@ footer {
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-}
-
-hr {
-  border: none;
-  border-top: 1px solid #e8e0ff;
-  margin: 14px 0;
 }
 
 /* ===============================
