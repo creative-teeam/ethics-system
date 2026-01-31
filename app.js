@@ -1,4 +1,4 @@
-// app.js（LocalStorage版：期間（複数） + フィルタ操作ログ + 自由記述→検索リンク生成→URLを添付に反映）
+// app.js（LocalStorage版：期間（複数） + フィルタ操作ログ + 自由記述→検索リンク生成）
 const STORE_KEY = "stageEthicsData_v1";
 
 // --- DOM ---
@@ -98,7 +98,7 @@ function loadData() {
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.3.1",
+      schemaVersion: "2.3.2",
       currentProjectId: firstId,
       projects: {
         [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [], filterLogs: [] }
@@ -142,7 +142,7 @@ function migrateIfNeeded(data) {
     });
   });
 
-  data.schemaVersion = "2.3.1";
+  data.schemaVersion = "2.3.2";
   return data;
 }
 
@@ -151,68 +151,122 @@ function estimateSeverity(element, category, issueText) {
   const t = (issueText || "").toLowerCase();
   if (category === "safety") return "high";
   if (category === "privacy" && (t.includes("未成年") || t.includes("楽屋") || t.includes("個人特定"))) return "high";
-  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲") || t.includes("引用"))) return "medium";
+  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲") || t.includes("引用") || t.includes("ロゴ") || t.includes("衣装") || t.includes("美術"))) return "medium";
   if (category === "ethics" && (t.includes("実在") || t.includes("事件") || t.includes("災害"))) return "medium";
   return "low";
 }
 
-// --- 論点抽出 ---
+// --- 論点抽出（美術/衣装/SNS追加） ---
 function extractIssues(text) {
   const t = (text || "").toLowerCase();
   const issues = [];
   const add = (element, category, issue) => issues.push({ element, category, issue });
 
+  // 映像配信
   if (text.includes("配信") || text.includes("収録") || t.includes("youtube") || t.includes("tiktok") || text.includes("アーカイブ")) {
     add("映像", "copyright", "配信/収録がある場合、上演と配信で必要な許諾（音楽・映像素材・実演/肖像）が分かれる可能性があります。形態ごとに権利処理を整理してください。");
     add("映像", "privacy", "舞台裏/楽屋/未成年の映り込みや個人特定のリスクがあります。撮影範囲・同意取得・公開範囲を設計してください。");
   }
-  if (text.includes("既存曲") || text.includes("カバー") || text.includes("BGM") || text.includes("音源")) {
+
+  // 音楽
+  if (text.includes("既存曲") || text.includes("カバー") || text.includes("BGM") || text.includes("音源") || text.includes("歌")) {
     add("音楽", "copyright", "既存曲の利用は『上演』と『配信/録画』で許諾が変わることがあります。使用形態・区間・音源種類（生演奏/録音）を分けて確認してください。");
   }
-  if (text.includes("台本") || text.includes("引用") || text.includes("原作") || text.includes("脚色")) {
+
+  // 台本/引用
+  if (text.includes("台本") || text.includes("引用") || text.includes("原作") || text.includes("脚色") || text.includes("翻案")) {
     add("脚本", "copyright", "台本の引用・翻案（脚色/改変）を行う場合、引用要件や許諾が必要になる可能性があります。出典・範囲・改変内容を整理してください。");
   }
+
+  // 実在事件
   if (text.includes("実在") || text.includes("事件") || text.includes("災害")) {
     add("脚本", "ethics", "実在の事件/災害を扱う場合、当事者性・再トラウマ化・誤解や誹謗中傷の誘発リスクを評価し、注意書きや監修の導入を検討してください。");
   }
+
+  // ストロボ
   if (text.includes("ストロボ") || text.includes("点滅")) {
     add("照明", "safety", "点滅・強い光は体調不良を引き起こす可能性があります。注意書き・緩和策・観客導線を検討してください。");
   }
+
+  // 未成年
   if (text.includes("未成年")) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
+
+  // ✅ 美術（舞台美術・小道具・ロゴ・キャラ・背景）
+  if (
+    text.includes("美術") || text.includes("舞台美術") || text.includes("大道具") || text.includes("小道具") ||
+    text.includes("背景") || text.includes("看板") || text.includes("ロゴ") || text.includes("キャラ") ||
+    text.includes("キャラクター") || text.includes("ポスター") || text.includes("写真") || text.includes("画像")
+  ) {
+    add("美術", "copyright", "舞台美術・小道具・背景・ロゴ・写真素材などに第三者の著作物/商標が含まれると、権利侵害リスクがあります。素材の出所（自作/購入/フリー/許諾）を整理してください。");
+  }
+
+  // ✅ 衣装（既製品改造・ロゴ・ブランド・キャラ衣装）
+  if (
+    text.includes("衣装") || text.includes("コスプレ") || text.includes("ユニフォーム") || text.includes("制服") ||
+    text.includes("ブランド") || text.includes("商標") || text.includes("ロゴ")
+  ) {
+    add("衣装", "copyright", "衣装にブランドロゴ/キャラクターデザイン/既製品の意匠が含まれる場合、権利や利用条件の確認が必要です（撮影・配信・グッズ化等でリスク増）。");
+  }
+
+  // ✅ SNS（告知・投稿・サムネ・画像・BGM・ハッシュタグ）
+  if (
+    text.includes("sns") || text.includes("Twitter") || text.includes("X") || text.includes("instagram") ||
+    text.includes("tiktok") || text.includes("告知") || text.includes("投稿") || text.includes("サムネ") ||
+    text.includes("リール") || text.includes("ショート") || text.includes("ハッシュタグ")
+  ) {
+    add("SNS", "copyright", "SNS告知で画像/フォント/音源/写真/映像素材を使う場合、素材ライセンスやプラットフォーム規約により利用条件が変わります。告知素材の出所と利用範囲を確認してください。");
+    add("SNS", "privacy", "SNS投稿は拡散力が高く、未成年・客席・楽屋の映り込み、個人特定のリスクが上がります。公開範囲/撮影ルール/同意の運用を定義してください。");
+  }
+
   if (issues.length === 0) {
-    add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出）』などを追記すると精度が上がります。");
+    add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出/美術/衣装/SNS）』を追記すると精度が上がります。");
   }
   return issues;
 }
 
-// --- 質問生成 ---
+// --- 質問生成（美術/衣装/SNS追加） ---
 function generateQuestions(text) {
   const t = text || "";
+  const low = t.toLowerCase();
   const q = [];
   const push = (s) => { if (!q.includes(s)) q.push(s); };
 
-  if (t.includes("配信") || t.toLowerCase().includes("youtube") || t.toLowerCase().includes("tiktok")) {
+  if (t.includes("配信") || low.includes("youtube") || low.includes("tiktok")) {
     push("配信はライブのみ？アーカイブ（後日公開）もありますか？");
     push("配信の公開範囲（限定公開/有料/全公開）はどれですか？");
     push("客席や未成年が映る可能性はありますか？撮影範囲は？");
   }
-  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源")) {
+  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源") || t.includes("歌")) {
     push("既存曲は生演奏ですか？録音音源ですか？");
     push("上演だけでなく録画/配信でも使いますか？（許諾が変わる可能性）");
     push("曲名・使用区間・使用回数を一覧にできますか？");
   }
-  if (t.includes("台本") || t.includes("引用") || t.includes("原作") || t.includes("脚色")) {
+  if (t.includes("台本") || t.includes("引用") || t.includes("原作") || t.includes("脚色") || t.includes("翻案")) {
     push("引用する箇所はどこですか？（量・範囲）");
     push("出典表示（作品名/著者/出版社など）は用意していますか？");
     push("翻案（脚色）や改変の範囲はどの程度ですか？");
+  }
+  if (t.includes("美術") || t.includes("ロゴ") || t.includes("小道具") || t.includes("背景") || t.includes("画像") || t.includes("写真")) {
+    push("美術・小道具・背景の素材は自作/購入/フリー/許諾のどれですか？出所を一覧化できますか？");
+    push("ロゴやキャラクターが入る場合、撮影/配信/告知物に載る前提ですか？");
+  }
+  if (t.includes("衣装") || t.includes("コスプレ") || t.includes("ブランド") || t.includes("ロゴ")) {
+    push("衣装は自作ですか？既製品改造ですか？ブランドロゴや意匠は含みますか？");
+    push("衣装写真をSNS/配信で公開しますか？（露出が増えるとリスク増）");
+  }
+  if (low.includes("sns") || t.includes("告知") || t.includes("投稿") || t.includes("サムネ")) {
+    push("SNS告知画像/サムネに使う写真・フォント・素材は利用条件を確認済みですか？");
+    push("BGM付き投稿（リール/ショート等）を予定していますか？音源はどうしますか？");
+    push("未成年や客席が映る可能性はありますか？公開範囲は？");
   }
   if (t.includes("未成年")) {
     push("未成年出演者の同意（保護者含む）は取得済みですか？");
     push("写真/動画の公開範囲の同意は別で取っていますか？");
   }
-  if (!q.length) push("配信有無、素材の出所、改変範囲（脚本/演出）を追記できますか？");
+
+  if (!q.length) push("配信有無、素材の出所、改変範囲（脚本/演出/美術/衣装/SNS）を追記できますか？");
   return q;
 }
 
@@ -223,12 +277,12 @@ function generateActionTemplates(issues) {
 
   issues.forEach((it) => {
     if (it.category === "copyright") {
-      push("権利処理の表を作成（上演/配信/録画別に：楽曲、音源、映像素材、台本、写真）");
+      push("権利処理の表を作成（上演/配信/録画/SNS別に：楽曲、音源、映像素材、台本、美術、衣装、写真/フォント/ロゴ）");
       push("利用許諾の範囲を文章化（期間・地域・公開形態・二次利用）");
     }
     if (it.category === "privacy") {
       push("同意取得フロー（出演者/保護者/スタッフ/映り込み）を決める");
-      push("撮影範囲・公開範囲を掲示（会場/配信ページ）");
+      push("撮影範囲・公開範囲を掲示（会場/配信ページ/SNS）");
     }
     if (it.category === "safety") {
       push("安全注意（点滅・音量・導線）を掲示し、代替観覧方法を用意");
@@ -255,6 +309,15 @@ function generateTasksFromIssues(issues) {
     if (it.category === "copyright" && it.element === "脚本") {
       add("引用/翻案の範囲（台本）を整理して出典表示を準備");
     }
+    if (it.category === "copyright" && it.element === "美術") {
+      add("美術・小道具・背景の素材出所一覧（自作/購入/フリー/許諾）を作成");
+    }
+    if (it.category === "copyright" && it.element === "衣装") {
+      add("衣装のロゴ/意匠/キャラ要素の有無を整理し、公開範囲（撮影/配信/SNS）を確認");
+    }
+    if (it.category === "copyright" && it.element === "SNS") {
+      add("SNS告知素材（写真/フォント/音源/映像）の利用条件を確認");
+    }
     if (it.category === "privacy") {
       add("撮影範囲と掲示文を確定");
       add("出演者（未成年含む）の同意書フロー確認");
@@ -268,7 +331,7 @@ function generateTasksFromIssues(issues) {
 }
 
 // ========================
-// ✅ 自由記述 → リスク候補 → 検索リンク生成
+// ✅ 自由記述 → Web検索リンク（美術/衣装/SNS追加）
 // ========================
 function extractUrlsFromText(text) {
   const urls = [];
@@ -296,6 +359,7 @@ function detectWebRiskCandidates(text) {
     items.push({ title, element, category, reason, query });
   };
 
+  // 配信
   if (t.includes("配信") || t.includes("収録") || t.includes("アーカイブ") || low.includes("youtube") || low.includes("tiktok")) {
     add(
       "配信/収録の許諾（上演とは別）",
@@ -306,6 +370,7 @@ function detectWebRiskCandidates(text) {
     );
   }
 
+  // 音楽
   if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源") || t.includes("歌")) {
     add(
       "既存曲（BGM/歌/カバー）の利用許諾",
@@ -316,6 +381,7 @@ function detectWebRiskCandidates(text) {
     );
   }
 
+  // 台本/引用
   if (t.includes("台本") || t.includes("引用") || t.includes("原作") || t.includes("脚色") || t.includes("翻案")) {
     add(
       "台本・原作の引用/翻案/脚色（著作権）",
@@ -326,16 +392,51 @@ function detectWebRiskCandidates(text) {
     );
   }
 
-  if (t.includes("画像") || t.includes("写真") || t.includes("ロゴ") || t.includes("ポスター") || t.includes("素材") || t.includes("映像素材")) {
+  // ✅ 美術
+  if (
+    t.includes("美術") || t.includes("舞台美術") || t.includes("大道具") || t.includes("小道具") ||
+    t.includes("背景") || t.includes("看板") || t.includes("ロゴ") || t.includes("キャラ") ||
+    t.includes("キャラクター") || t.includes("ポスター") || t.includes("写真") || t.includes("画像")
+  ) {
     add(
-      "画像/写真/ロゴ/素材の二次利用（著作権・商標）",
-      "映像",
+      "舞台美術・小道具・背景素材（著作権/商標）",
+      "美術",
       "copyright",
-      "素材の権利者が複数の場合があり、二次利用条件の確認が必要です。",
-      "画像 ロゴ 二次利用 著作権 商標 舞台"
+      "舞台上の美術や小道具に他者の画像・ロゴ・キャラ等が含まれると、撮影/配信/告知で侵害リスクが上がります。素材出所の確認が必要です。",
+      "舞台美術 小道具 背景 ロゴ 画像 著作権 商標"
     );
   }
 
+  // ✅ 衣装
+  if (t.includes("衣装") || t.includes("コスプレ") || t.includes("制服") || t.includes("ブランド") || t.includes("ロゴ")) {
+    add(
+      "衣装（ブランドロゴ/キャラ衣装）の公開・配信リスク",
+      "衣装",
+      "copyright",
+      "衣装にブランドロゴやキャラ要素がある場合、配信・SNS・物販での利用条件確認が必要になることがあります。",
+      "衣装 ブランドロゴ コスプレ 舞台 配信 SNS 権利"
+    );
+  }
+
+  // ✅ SNS
+  if (low.includes("sns") || t.includes("告知") || t.includes("投稿") || t.includes("サムネ") || low.includes("instagram") || t.includes("X") || t.includes("twitter")) {
+    add(
+      "SNS告知素材（画像/フォント/音源/写真）の利用条件",
+      "SNS",
+      "copyright",
+      "SNSは拡散されやすく、素材ライセンス違反が目立ちやすいです。特にフォント/写真/音源/テンプレ素材の利用条件を確認します。",
+      "SNS 告知 画像 フォント 音源 写真 利用条件 ライセンス"
+    );
+    add(
+      "SNSでの個人情報・未成年の映り込み",
+      "SNS",
+      "privacy",
+      "SNSは二次拡散されるため、未成年・客席・楽屋の映り込みや個人特定のリスクが高くなります。",
+      "SNS 未成年 映り込み 個人情報 公開 同意書"
+    );
+  }
+
+  // 未成年
   if (t.includes("未成年") || t.includes("高校生") || t.includes("中学生") || t.includes("子役")) {
     add(
       "未成年の撮影・公開（同意/プライバシー）",
@@ -346,6 +447,7 @@ function detectWebRiskCandidates(text) {
     );
   }
 
+  // 舞台裏
   if (t.includes("楽屋") || t.includes("舞台裏") || t.includes("バックヤード") || t.includes("個人情報")) {
     add(
       "舞台裏/楽屋の映り込み（プライバシー）",
@@ -356,6 +458,7 @@ function detectWebRiskCandidates(text) {
     );
   }
 
+  // 実在事件
   if (t.includes("実在") || t.includes("事件") || t.includes("災害")) {
     add(
       "実在事件/災害題材（倫理・名誉・配慮）",
@@ -366,6 +469,7 @@ function detectWebRiskCandidates(text) {
     );
   }
 
+  // 安全
   if (t.includes("ストロボ") || t.includes("点滅") || t.includes("爆音") || t.includes("大音量")) {
     add(
       "点滅・大音量の注意（安全配慮）",
@@ -376,14 +480,14 @@ function detectWebRiskCandidates(text) {
     );
   }
 
-  // ✅ 何も引っかからない時でも「検索リンクを必ず出す」
+  // ✅ 何も引っかからない時でも検索リンクは必ず出す
   if (items.length === 0) {
     add(
       "一般的な舞台の権利処理チェック（検出不足のため）",
       "全体",
       "ethics",
-      "配信有無・素材出所・改変範囲などの追記で精度が上がります。まず一般チェックから根拠を探します。",
-      "舞台 権利処理 チェックリスト 音楽 台本 配信"
+      "配信有無・素材出所・改変範囲（脚本/演出/美術/衣装/SNS）の追記で精度が上がります。まず一般チェックから根拠を探します。",
+      "舞台 権利処理 チェックリスト 台本 美術 衣装 SNS"
     );
   }
 
@@ -393,7 +497,6 @@ function detectWebRiskCandidates(text) {
 function renderWebRisks(text) {
   clearWebError();
 
-  // ✅ HTML側の枠が無いと絶対に描画できないのでエラー表示
   if (!webRisksList) {
     showWebError("エラー：HTMLに id=\"webRisksList\" が見つかりません。index.htmlに <div id=\"webRisksList\"></div> を入れてください。");
     return;
@@ -405,7 +508,7 @@ function renderWebRisks(text) {
     const items = detectWebRiskCandidates(text);
     const memoUrls = extractUrlsFromText(text);
 
-    // メモ内URLがある場合：そのまま添付に入れられる
+    // メモ内URL
     if (memoUrls.length) {
       const box = document.createElement("div");
       box.className = "webriskCard";
@@ -435,7 +538,7 @@ function renderWebRisks(text) {
       });
     }
 
-    // ✅ リスク候補カード（検索リンク2つ）
+    // リスク候補カード
     items.forEach((it) => {
       const card = document.createElement("div");
       card.className = "webriskCard";
@@ -467,7 +570,6 @@ function renderWebRisks(text) {
         </div>
       `;
 
-      // 添付URLへ反映
       const urlInput = card.querySelector(".riskUrlInput");
       card.querySelector(".btnApplyRiskUrl").addEventListener("click", () => {
         const u = safeUrl(urlInput.value);
@@ -477,7 +579,6 @@ function renderWebRisks(text) {
         window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
       });
 
-      // ログ欄へセット
       card.querySelector(".btnFillLogFromRisk").addEventListener("click", () => {
         if (logElement) logElement.value = it.element;
         if (logCategory) logCategory.value = it.category;
@@ -850,7 +951,7 @@ analyzeBtn?.addEventListener("click", () => {
   renderIssues(issues);
   renderMaterialOutputs(text, issues);
 
-  // ✅ ここで必ず検索リンクを生成
+  // ✅ 解析で検索リンク生成
   renderWebRisks(text);
 
   const newTasks = generateTasksFromIssues(issues);
@@ -863,7 +964,7 @@ analyzeBtn?.addEventListener("click", () => {
   renderAll();
 });
 
-// ✅ 入力中にも検索リンクを更新（押し忘れ対策）
+// ✅ 入力中にも検索リンクを更新
 let memoTimer = null;
 inputText?.addEventListener("input", () => {
   if (memoTimer) clearTimeout(memoTimer);
@@ -964,8 +1065,6 @@ btnApplyTemplate?.addEventListener("click", () => {
   const t = buildTemplateText();
   const cur = inputText?.value || "";
   if (inputText) inputText.value = cur ? `${t}\n\n${cur}` : t;
-
-  // テンプレ反映後も更新
   renderWebRisks(inputText.value || "");
 });
 
@@ -978,7 +1077,7 @@ btnResetTemplate?.addEventListener("click", () => {
   if (r) r.value = "";
 });
 
-// フィルタ：変更したらフィルタログ（デバウンス）
+// フィルタログ（デバウンス）
 let filterLogTimer = null;
 function logFilterChangeDebounced() {
   if (filterLogTimer) clearTimeout(filterLogTimer);
@@ -995,7 +1094,7 @@ btnAddDateRow?.addEventListener("click", () => {
   addFilterLog("date_add");
 });
 
-// 初期行にイベント付与
+// 初期行
 if (dateRows) {
   const first = dateRows.querySelector(".dateRow");
   if (first) attachDateRowEvents(first);
@@ -1017,5 +1116,4 @@ f_reset?.addEventListener("click", () => {
 
 // init
 renderAll();
-// ✅ 初期表示でも検索リンクを出す（空でも1件出る）
 renderWebRisks(inputText?.value || "");
