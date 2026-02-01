@@ -1,29 +1,18 @@
-/* ===============================
-   Base Reset
-=============================== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+  font-family: "Segoe UI", "Meiryo", sans-serif;
 }
 
-/* ===============================
-   Background
-=============================== */
-html, body {
-  width: 100%;
-  min-height: 100%;
-  background: #f3efff;   /* 淡い紫 */
-  color: #1a1a2e;
+body {
+  background: #f3efff;
+  color: #222;
 }
 
-/* ===============================
-   Layout
-=============================== */
 .wrap {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
   padding: 20px;
 }
 
@@ -33,90 +22,38 @@ html, body {
   gap: 20px;
 }
 
-/* ===============================
-   Header / Footer
-=============================== */
 header {
   text-align: center;
-  margin-bottom: 20px;
-}
-
-h1 {
-  font-size: 2rem;
-  color: #1a1a2e;
 }
 
 .sub {
-  margin-top: 6px;
-  color: #4a4a7a;
-  font-size: 0.95rem;
+  color: #555;
 }
 
-footer {
-  text-align: center;
-  margin-top: 40px;
-  color: #666;
-}
-
-/* ===============================
-   Cards
-=============================== */
 .card {
-  background: #ffffff;
+  background: white;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  padding: 18px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-/* ===============================
-   Headings
-=============================== */
-h2 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  color: #22224a;
-}
-
-h3 {
-  font-size: 1.05rem;
-  margin: 12px 0 8px;
-  color: #33335a;
-}
-
-/* ===============================
-   Inputs
-=============================== */
-input, textarea, select {
+textarea, input, select {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
-  font-size: 0.95rem;
-  background: #fafaff;
-  color: #111;
+  margin-top: 6px;
 }
 
 textarea {
-  min-height: 90px;
-  resize: vertical;
+  min-height: 100px;
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #7777aa;
-}
-
-/* ===============================
-   Rows & Grids
-=============================== */
 .row {
   display: flex;
   gap: 10px;
   margin-top: 10px;
-  align-items: center;
 }
-
-.grow { flex: 1; }
 
 .grid2 {
   display: grid;
@@ -130,227 +67,100 @@ textarea::placeholder {
   gap: 10px;
 }
 
-/* ===============================
-   Buttons
-=============================== */
 button {
   padding: 10px 14px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  font-size: 0.9rem;
-  background: #4b5cff;   /* 通常ボタン（青） */
-  color: #fff;
-  transition: 0.2s;
+  background: #4b5cff;
+  color: white;
 }
 
-button:hover { opacity: 0.92; }
-
-/* ghost = サブボタン */
-button.ghost {
-  background: #eaeaff;
-  color: #333;
-  border: 1px solid #cfcfff;
-}
-
-/* ✅ success = 緑（期間追加 / ログ追加 / テンプレ反映） */
 button.success {
-  background: #2ecc71 !important;
-  color: #fff !important;
-  border: none !important;
-}
-button.success:hover { background: #27ae60 !important; }
-
-/* ✅ danger = 赤（削除・解除・クリア・リセット） */
-button.danger,
-#deleteProjectBtn,
-#clearLogsBtn,
-#clearBtn,
-#btnResetTemplate,
-#f_reset,
-.btnDelDate {
-  background: #e74c3c !important;
-  color: #fff !important;
-  border: none !important;
-}
-button.danger:hover,
-#deleteProjectBtn:hover,
-#clearLogsBtn:hover,
-#clearBtn:hover,
-#btnResetTemplate:hover,
-#f_reset:hover,
-.btnDelDate:hover {
-  background: #c0392b !important;
+  background: #2ecc71;
 }
 
-/* ===============================
-   Progress
-=============================== */
-.progressWrap { margin-top: 10px; }
-
-.progressLabel {
-  font-size: 0.9rem;
-  margin-bottom: 6px;
+button.danger {
+  background: #e74c3c;
 }
 
-.progressBar {
-  width: 100%;
-  height: 10px;
-  background: #e0e0e0;
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background: #2ecc71;  /* 緑 */
-  transition: width 0.3s;
-}
-
-/* ===============================
-   Dashboard
-=============================== */
-.dash {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 10px 0;
-}
-
-.kpi {
-  background: #f7f7ff;
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-}
-
-.kpi .k {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.kpi .v {
-  font-size: 1.4rem;
-  font-weight: bold;
+button.ghost {
+  background: #eee;
   color: #333;
-}
-
-/* ===============================
-   Tags
-=============================== */
-.tag {
-  display: inline-block;
-  background: #eef;
-  color: #333;
-  padding: 3px 8px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  margin-right: 4px;
-}
-
-/* ===============================
-   Lists
-=============================== */
-.issues {
-  list-style: none;
-  margin-top: 10px;
 }
 
 .issues li {
   background: #f8f8ff;
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #e0e0ff;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+  border: 1px solid #ddd;
 }
 
-.bullets { padding-left: 20px; }
-.bullets li { margin-bottom: 6px; }
+.bullets {
+  padding-left: 20px;
+}
 
-/* ===============================
-   Tables (logs)
-=============================== */
+.tag {
+  background: #eef;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
 .table {
   margin-top: 10px;
-  display: grid;
-  gap: 6px;
 }
 
 .rowh, .rowd {
   display: grid;
-  grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 0.5fr;
+  grid-template-columns: 1fr 2fr 1fr 1fr 1fr 60px;
   gap: 6px;
-  align-items: center;
+  padding: 6px;
 }
 
-.rowh { font-weight: bold; color: #444; }
+.rowh {
+  font-weight: bold;
+}
 
 .rowd {
   background: #fafaff;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e0e0ff;
+  border-radius: 6px;
 }
 
-.cell {
-  font-size: 0.85rem;
-  color: #222;
-}
-
-.cell a { color: #2b55ff; text-decoration: underline; }
-
-/* ===============================
-   Filters
-=============================== */
 .filters {
-  background: #f8f8ff;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #e0e0ff;
+  background: #f7f7ff;
+  padding: 10px;
+  border-radius: 8px;
 }
 
-/* ===============================
-   Date Rows
-=============================== */
 .dateRows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 6px;
 }
 
 .dateRow {
   display: flex;
-  align-items: center;
   gap: 6px;
-}
-
-.dateSep { color: #666; }
-
-/* ===============================
-   Template checks
-=============================== */
-.check {
-  font-size: 0.9rem;
-  color: #333;
-  display: flex;
   align-items: center;
-  gap: 8px;
 }
 
-/* ===============================
-   Misc
-=============================== */
 .hint {
-  font-size: 0.8rem;
+  font-size: 12px;
   color: #666;
   margin-top: 6px;
 }
 
-/* ===============================
-   Responsive
-=============================== */
+footer {
+  text-align: center;
+  margin-top: 40px;
+  color: #777;
+}
+
 @media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
-  .rowh, .rowd { grid-template-columns: 1fr; }
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
