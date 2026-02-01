@@ -6,7 +6,7 @@
   <title>権利処理・管理システム</title>
 
   <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-6">
+  <link rel="stylesheet" href="style.css?v=20260202-7">
 </head>
 <body>
   <header class="wrap">
@@ -100,11 +100,10 @@
         ※「添付URLに反映」でログ欄の添付URLへ入ります。
       </div>
 
-      <!-- ✅ デフォルトで出てくる検索欄 -->
       <div class="webSearchBox">
         <label>追加で検索したいキーワード（任意）</label>
         <div class="row">
-          <input id="webQuery" class="grow" placeholder="例：舞台 配信 公衆送信権 / 舞台 衣装 ロゴ 商標 / SNS 告知 画像 フォント 著作権" />
+          <input id="webQuery" class="grow" placeholder="例：舞台 配信 公衆送信権 / 衣装 ロゴ 商標 / SNS 告知 フォント 著作権" />
           <button type="button" class="success" id="btnWebSearch">検索リンクを追加</button>
         </div>
         <div class="hint">※ここで追加した検索も、根拠確認リストに追加されます。</div>
@@ -114,7 +113,7 @@
       <div id="webRisksError" class="errorBox" style="display:none;"></div>
     </section>
 
-    <!-- 下：案件＋ログ -->
+    <!-- 下：案件＋ログ（⑤だけ合体し直し） -->
     <section class="card" style="grid-column:1/-1;">
       <h2>④ 案件（Project）</h2>
 
@@ -130,26 +129,27 @@
 
       <hr />
 
-      <h2>⑤ ログ（合意形成ログ）</h2>
+      <h2>⑤ 合意形成ログ（フィルタ＋入力を統一）</h2>
 
+      <!-- ✅ ⑤：フィルタ＆ログ共通設定（要素/カテゴリ/ステータスはここ1つだけ） -->
       <div class="filters">
         <div class="grid4">
           <div>
-            <label>検索（論点/理由）</label>
+            <label>検索（論点/理由/添付）</label>
             <input id="f_q" placeholder="キーワード" />
           </div>
+
           <div>
-            <label>要素</label>
-            <select id="f_element">
-              <option value="">すべて</option>
+            <label>要素（フィルタ兼ログ）</label>
+            <select id="logElement">
               <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
               <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
             </select>
           </div>
+
           <div>
-            <label>カテゴリ</label>
-            <select id="f_category">
-              <option value="">すべて</option>
+            <label>カテゴリ（フィルタ兼ログ）</label>
+            <select id="logCategory">
               <option value="copyright">copyright</option>
               <option value="privacy">privacy</option>
               <option value="ethics">ethics</option>
@@ -157,10 +157,10 @@
               <option value="bias">bias</option>
             </select>
           </div>
+
           <div>
-            <label>ステータス</label>
-            <select id="f_status">
-              <option value="">すべて</option>
+            <label>ステータス（フィルタ兼ログ）</label>
+            <select id="logStatus">
               <option value="needs_review">要確認</option>
               <option value="doing">対応中</option>
               <option value="done">完了</option>
@@ -168,55 +168,30 @@
           </div>
         </div>
 
-        <div class="grid4" style="margin-top:10px;">
-          <div style="grid-column:1/-1;">
-            <label>期間（複数追加できます）</label>
+        <div style="margin-top:10px;">
+          <label>期間（このログに保存／同時にフィルタにも使う・複数追加OK）</label>
 
-            <div id="dateRows" class="dateRows">
-              <div class="dateRow">
-                <input class="f_from" type="date" />
-                <span class="dateSep">〜</span>
-                <input class="f_to" type="date" />
-                <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
-              </div>
+          <div id="dateRows" class="dateRows">
+            <div class="dateRow">
+              <input class="f_from" type="date" />
+              <span class="dateSep">〜</span>
+              <input class="f_to" type="date" />
+              <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
             </div>
-
-            <div class="row" style="margin-top:10px;">
-              <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
-              <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
-            </div>
-
-            <div class="hint">※複数期間は「どれか1つでも一致（OR）」で絞り込みます。</div>
-
-            <!-- 互換用（非表示） -->
-            <input id="f_from" type="date" style="display:none" />
-            <input id="f_to" type="date" style="display:none" />
           </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
+            <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
+          </div>
+
+          <div class="hint">※期間は「このログの対象期間」として保存されます。表示の絞り込みにも使われます。</div>
         </div>
       </div>
 
       <hr />
 
-      <div class="grid2">
-        <div>
-          <label>要素</label>
-          <select id="logElement">
-            <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-            <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
-          </select>
-        </div>
-        <div>
-          <label>カテゴリ</label>
-          <select id="logCategory">
-            <option value="copyright">copyright</option>
-            <option value="privacy">privacy</option>
-            <option value="ethics">ethics</option>
-            <option value="safety">safety</option>
-            <option value="bias">bias</option>
-          </select>
-        </div>
-      </div>
-
+      <!-- ✅ ログ本文入力（⑤の共通設定を使って保存される） -->
       <label style="margin-top:10px;">論点（issue）</label>
       <textarea id="logIssue" placeholder="例：SNS告知画像の素材出所（写真/フォント/ロゴ）を確認"></textarea>
 
@@ -230,15 +205,7 @@
             <option>保留</option>
           </select>
         </div>
-        <div>
-          <label>ステータス（進捗）</label>
-          <select id="logStatus">
-            <option value="needs_review">要確認</option>
-            <option value="doing">対応中</option>
-            <option value="done">完了</option>
-          </select>
-        </div>
-        <div style="grid-column: span 2;">
+        <div style="grid-column: span 3;">
           <label>理由（任意）</label>
           <input id="logRationale" placeholder="判断理由（責任ログ）" />
         </div>
@@ -271,6 +238,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202-6"></script>
+  <script src="app.js?v=20260202-7"></script>
 </body>
 </html>
