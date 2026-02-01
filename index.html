@@ -55,9 +55,6 @@
         <label class="check"><input type="checkbox" id="t_real_event"> 実在事件/災害が題材</label>
       </div>
 
-      <label style="margin-top:10px;">撮影範囲（任意）</label>
-      <input id="t_shoot_range" placeholder="例：客席は映さない、舞台上のみ、終演後の挨拶だけ など" />
-
       <div class="row">
         <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
         <button type="button" class="ghost danger" id="btnResetTemplate">テンプレをリセット</button>
@@ -127,42 +124,7 @@
       <div class="filters">
         <div class="grid4">
           <div>
-            <label>検索（論点/理由）</label>
-            <input id="f_q" placeholder="キーワード" />
-          </div>
-          <div>
-            <label>要素</label>
-            <select id="f_element">
-              <option value="">すべて</option>
-              <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-              <option>映像</option><option>全体</option>
-            </select>
-          </div>
-          <div>
-            <label>カテゴリ</label>
-            <select id="f_category">
-              <option value="">すべて</option>
-              <option value="copyright">著作権</option>
-              <option value="privacy">プライバシー</option>
-              <option value="ethics">倫理</option>
-              <option value="safety">安全</option>
-              <option value="bias">偏り</option>
-              <option value="art">美術</option>
-              <option value="costume">衣装</option>
-              <option value="sns">SNS</option>
-            </select>
-          </div>
-          <div>
-            <label>ステータス</label>
-            <select id="f_status">
-              <option value="">すべて</option>
-              <option value="needs_review">要確認</option>
-              <option value="doing">対応中</option>
-              <option value="done">完了</option>
-            </select>
-          </div>
-        </div>
-
+     
         <div class="grid4" style="margin-top:10px;">
           <div style="grid-column:1/-1;">
             <label>期間（複数追加できます）</label>
