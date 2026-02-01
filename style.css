@@ -14,7 +14,7 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff !important;
+  background: #f3efff;   /* 淡い紫 */
   color: #1a1a2e;
 }
 
@@ -41,7 +41,10 @@ header {
   margin-bottom: 20px;
 }
 
-h1 { font-size: 2rem; color: #1a1a2e; }
+h1 {
+  font-size: 2rem;
+  color: #1a1a2e;
+}
 
 .sub {
   margin-top: 6px;
@@ -53,12 +56,6 @@ footer {
   text-align: center;
   margin-top: 40px;
   color: #666;
-}
-
-hr {
-  border: none;
-  border-top: 1px solid #e8e0ff;
-  margin: 14px 0;
 }
 
 /* ===============================
@@ -89,8 +86,6 @@ h3 {
 /* ===============================
    Inputs
 =============================== */
-label { display: block; font-size: 0.9rem; margin-bottom: 6px; color: #33335a; }
-
 input, textarea, select {
   width: 100%;
   padding: 10px;
@@ -119,7 +114,6 @@ textarea::placeholder {
   gap: 10px;
   margin-top: 10px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
 .grow { flex: 1; }
@@ -145,39 +139,100 @@ button {
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
-  background: #4b5cff;
+  background: #4b5cff;   /* 通常ボタン（青） */
   color: #fff;
   transition: 0.2s;
 }
+
 button:hover { opacity: 0.92; }
 
+/* ghost = サブボタン */
 button.ghost {
   background: #eaeaff;
   color: #333;
   border: 1px solid #cfcfff;
 }
 
+/* ✅ success = 緑（期間追加 / ログ追加 / テンプレ反映） */
 button.success {
-  background: #2ecc71;
-  color: #fff;
+  background: #2ecc71 !important;
+  color: #fff !important;
+  border: none !important;
 }
-button.success:hover { background: #27ae60; }
+button.success:hover { background: #27ae60 !important; }
 
-button.danger {
+/* ✅ danger = 赤（削除・解除・クリア・リセット） */
+button.danger,
+#deleteProjectBtn,
+#clearLogsBtn,
+#clearBtn,
+#btnResetTemplate,
+#f_reset,
+.btnDelDate {
   background: #e74c3c !important;
   color: #fff !important;
   border: none !important;
 }
-button.danger:hover { background: #c0392b !important; }
-
-#btnAddDateRow,
-#addLogBtn {
-  background: #2ecc71 !important;
-  color: #fff !important;
+button.danger:hover,
+#deleteProjectBtn:hover,
+#clearLogsBtn:hover,
+#clearBtn:hover,
+#btnResetTemplate:hover,
+#f_reset:hover,
+.btnDelDate:hover {
+  background: #c0392b !important;
 }
-#btnAddDateRow:hover,
-#addLogBtn:hover {
-  background: #27ae60 !important;
+
+/* ===============================
+   Progress
+=============================== */
+.progressWrap { margin-top: 10px; }
+
+.progressLabel {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background: #e0e0e0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #2ecc71;  /* 緑 */
+  transition: width 0.3s;
+}
+
+/* ===============================
+   Dashboard
+=============================== */
+.dash {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.kpi {
+  background: #f7f7ff;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+}
+
+.kpi .k {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.kpi .v {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #333;
 }
 
 /* ===============================
@@ -191,13 +246,15 @@ button.danger:hover { background: #c0392b !important; }
   border-radius: 999px;
   font-size: 0.75rem;
   margin-right: 4px;
-  margin-top: 2px;
 }
 
 /* ===============================
    Lists
 =============================== */
-.issues { list-style: none; margin-top: 10px; }
+.issues {
+  list-style: none;
+  margin-top: 10px;
+}
 
 .issues li {
   background: #f8f8ff;
@@ -209,6 +266,38 @@ button.danger:hover { background: #c0392b !important; }
 
 .bullets { padding-left: 20px; }
 .bullets li { margin-bottom: 6px; }
+
+/* ===============================
+   Tables (logs)
+=============================== */
+.table {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.rowh, .rowd {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 0.5fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.rowh { font-weight: bold; color: #444; }
+
+.rowd {
+  background: #fafaff;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #e0e0ff;
+}
+
+.cell {
+  font-size: 0.85rem;
+  color: #222;
+}
+
+.cell a { color: #2b55ff; text-decoration: underline; }
 
 /* ===============================
    Filters
@@ -234,122 +323,28 @@ button.danger:hover { background: #c0392b !important; }
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
 }
 
 .dateSep { color: #666; }
 
 /* ===============================
-   Tables (logs)
+   Template checks
 =============================== */
-.table {
-  margin-top: 10px;
-  display: grid;
-  gap: 6px;
-}
-
-.rowh, .rowd {
-  display: grid;
-  grid-template-columns: 1.3fr 2fr 1fr 1fr 1fr 0.6fr;
-  gap: 6px;
-}
-
-.rowh { font-weight: bold; color: #444; }
-
-.rowd {
-  background: #fafaff;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #e0e0ff;
-}
-
-.cell {
-  font-size: 0.85rem;
-  color: #222;
-}
-
-.small {
-  font-size: 0.78rem;
-  color: #666;
-  margin-top: 6px;
-  line-height: 1.3;
-  white-space: pre-wrap;
-}
-
-/* ===============================
-   Web Risk Panel
-=============================== */
-.webrisk {
-  margin-top: 10px;
-  display: grid;
-  gap: 10px;
-}
-
-.webriskCard {
-  border: 1px solid #e0e0ff;
-  background: #fafaff;
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.webriskTitle {
-  font-weight: 700;
-  color: #22224a;
-  margin-bottom: 6px;
-}
-
-.webriskMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.webrisk a,
-.webrisk a:visited {
-  color: #1f49ff !important;
-  text-decoration: underline !important;
-  font-weight: 600;
-}
-
-.webriskActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.webriskActions input {
-  flex: 1;
-  min-width: 220px;
-}
-
-/* ===============================
-   Error Box
-=============================== */
-.errorBox {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #fff0f0;
-  border: 1px solid #ffb3b3;
-  color: #7a0000;
-  font-size: 0.9rem;
-  white-space: pre-wrap;
-}
-
-/* ===============================
-   Misc
-=============================== */
-.hint { font-size: 0.8rem; color: #666; margin-top: 6px; }
-
 .check {
   font-size: 0.9rem;
   color: #333;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ===============================
+   Misc
+=============================== */
+.hint {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 6px;
 }
 
 /* ===============================
