@@ -1,6 +1,3 @@
-// app.js（LocalStorage版：index.html一致・期間（複数）追加対応 + フィルタ保存付きログ）
-// ✅ export系は参照しません
-
 const STORE_KEY = "stageEthicsData_v1";
 
 // --- DOM ---
@@ -11,6 +8,9 @@ const issuesList = document.getElementById("issuesList");
 const questionsList = document.getElementById("questionsList");
 const actionsList = document.getElementById("actionsList");
 const tasksList = document.getElementById("tasksList");
+
+const webRisksList = document.getElementById("webRisksList");
+const webRisksError = document.getElementById("webRisksError");
 
 // Projects
 const projectTitle = document.getElementById("projectTitle");
@@ -44,12 +44,9 @@ const f_category = document.getElementById("f_category");
 const f_status = document.getElementById("f_status");
 const f_reset = document.getElementById("f_reset");
 
-// ✅ Multi date rows
+// Multi date rows
 const dateRows = document.getElementById("dateRows");
 const btnAddDateRow = document.getElementById("btnAddDateRow");
-
-// ✅ 保存スイッチ
-const saveFiltersWithLog = document.getElementById("saveFiltersWithLog");
 
 // KPI
 const kpiNeeds = document.getElementById("kpiNeeds");
@@ -58,11 +55,9 @@ const kpiDone = document.getElementById("kpiDone");
 const progressPct = document.getElementById("progressPct");
 const progressFill = document.getElementById("progressFill");
 
-// Web risks (placeholder)
-const webRisksList = document.getElementById("webRisksList");
-const webRisksError = document.getElementById("webRisksError");
-
-// --- utils ---
+// -------------------
+// utils
+// -------------------
 function uid() {
   return crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
 }
@@ -77,18 +72,55 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+function safeUrl(u) {
+  const t = (u || "").trim();
+  if (!t) return "";
+  try {
+    return new URL(t).toString();
+  } catch {
+    return "";
+  }
+}
+function showWebError(msg) {
+  if (!webRisksError) return;
+  webRisksError.style.display = "block";
+  webRisksError.textContent = msg;
+}
+function clearWebError() {
+  if (!webRisksError) return;
+  webRisksError.style.display = "none";
+  webRisksError.textContent = "";
+}
 
-// --- Data model ---
-// data = { schemaVersion, currentProjectId, projects: { [id]: { id, title, logs: [], tasks: [] } } }
+// -------------------
+// Category label helper（タグ表示用）
+// -------------------
+function categoryLabel(cat) {
+  const map = {
+    copyright: "著作権",
+    privacy: "プライバシー",
+    ethics: "倫理",
+    safety: "安全",
+    bias: "偏り",
+    art: "美術",
+    costume: "衣装",
+    sns: "SNS",
+  };
+  return map[cat] || cat || "";
+}
+
+// -------------------
+// Data model
+// -------------------
 function loadData() {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.3.0",
+      schemaVersion: "2.4.0",
       currentProjectId: firstId,
       projects: {
-        [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [] }
+        [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [], filterLogs: [] }
       }
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(init));
@@ -102,11 +134,9 @@ function loadData() {
     return loadData();
   }
 }
-
 function saveData(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
 }
-
 function migrateIfNeeded(data) {
   if (!data.schemaVersion) data.schemaVersion = "1.0.0";
   if (!data.projects) data.projects = {};
@@ -120,6 +150,7 @@ function migrateIfNeeded(data) {
     const p = data.projects[pid];
     if (!Array.isArray(p.logs)) p.logs = [];
     if (!Array.isArray(p.tasks)) p.tasks = [];
+    if (!Array.isArray(p.filterLogs)) p.filterLogs = [];
 
     p.logs.forEach((l) => {
       if (!l.id) l.id = uid();
@@ -127,116 +158,171 @@ function migrateIfNeeded(data) {
       if (!l.status) l.status = "needs_review";
       if (!Array.isArray(l.attachments)) l.attachments = [];
       if (!l.severity) l.severity = "low";
-      // ✅ 追加：保存フィルタ（無ければnull）
-      if (!("savedFilters" in l)) l.savedFilters = null;
     });
   });
 
-  data.schemaVersion = "2.3.0";
+  data.schemaVersion = "2.4.0";
   return data;
 }
 
-// --- AI補助（ルール）: severity推定 ---
+// -------------------
+// severity推定（美術/衣装/SNSも中くらい扱い）
+// -------------------
 function estimateSeverity(element, category, issueText) {
   const t = (issueText || "").toLowerCase();
   if (category === "safety") return "high";
   if (category === "privacy" && (t.includes("未成年") || t.includes("楽屋") || t.includes("個人特定"))) return "high";
-  if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲"))) return "medium";
+  if (category === "art" || category === "costume" || category === "sns") return "medium";
+  if (category === "copyright") return "medium";
   if (category === "ethics" && (t.includes("実在") || t.includes("事件") || t.includes("災害"))) return "medium";
   return "low";
 }
 
-// --- Rule-based issue extractor (no AI) ---
+// ===================================================
+// ✅ 論点抽出：美術/衣装/SNSを「カテゴリ」にして返す
+//  element = 台本/演出メモ上の観点（脚本/演出/映像等）
+//  category = 著作権/…/美術/衣装/SNS
+// ===================================================
 function extractIssues(text) {
   const t = (text || "").toLowerCase();
   const issues = [];
   const add = (element, category, issue) => issues.push({ element, category, issue });
 
+  // 配信/収録
   if (text.includes("配信") || text.includes("収録") || t.includes("youtube") || t.includes("tiktok") || text.includes("アーカイブ")) {
     add("映像", "copyright", "配信/収録がある場合、上演と配信で必要な許諾（音楽・映像素材・実演/肖像）が分かれる可能性があります。形態ごとに権利処理を整理してください。");
     add("映像", "privacy", "舞台裏/楽屋/未成年の映り込みや個人特定のリスクがあります。撮影範囲・同意取得・公開範囲を設計してください。");
   }
-  if (text.includes("既存曲") || text.includes("カバー") || text.includes("BGM") || t.includes("j-pop") || text.includes("音源")) {
+
+  // 音楽
+  if (text.includes("既存曲") || text.includes("カバー") || text.includes("bgm") || text.includes("音源") || text.includes("歌")) {
     add("音楽", "copyright", "既存曲の利用は『上演』と『配信/録画』で許諾が変わることがあります。使用形態・区間・音源種類（生演奏/録音）を分けて確認してください。");
   }
-  if (text.includes("衣装") || text.includes("ロゴ") || text.includes("ブランド")) {
-    add("衣装", "copyright", "衣装にロゴやキャラクター、ブランド意匠がある場合、映像/SNSでの露出により権利・規約上の確認が必要になることがあります。素材や表示範囲を整理してください。");
+
+  // 台本/引用/脚色
+  if (text.includes("台本") || text.includes("引用") || text.includes("原作") || text.includes("脚色") || text.includes("翻案")) {
+    add("脚本", "copyright", "台本の引用・翻案（脚色/改変）を行う場合、引用要件や許諾が必要になる可能性があります。出典・範囲・改変内容を整理してください。");
   }
-  if (text.includes("美術") || text.includes("小道具") || text.includes("背景") || text.includes("看板")) {
-    add("美術", "copyright", "舞台美術・小道具に既存のデザイン/写真/キャラクター/ロゴ等を使う場合、複製・公衆送信（配信/SNS）に関わる確認が必要です。出所と利用範囲を整理してください。");
-  }
-  if (text.includes("SNS") || t.includes("twitter") || t.includes("x ") || t.includes("instagram") || t.includes("tiktok")) {
-    add("SNS", "privacy", "SNS告知で出演者の個人情報や未成年の扱い、第三者の映り込みに注意が必要です。公開範囲・同意・削除対応を決めてください。");
-    add("SNS", "copyright", "SNS告知画像/動画に写真・フォント・音源・ロゴ等を含む場合、利用規約・ライセンスに合うか確認してください。");
-  }
+
+  // 実在事件/災害
   if (text.includes("実在") || text.includes("事件") || text.includes("災害")) {
     add("脚本", "ethics", "実在の事件/災害を扱う場合、当事者性・再トラウマ化・誤解や誹謗中傷の誘発リスクを評価し、注意書きや監修の導入を検討してください。");
   }
+
+  // ストロボ
   if (text.includes("ストロボ") || text.includes("点滅")) {
     add("照明", "safety", "点滅・強い光は体調不良を引き起こす可能性があります。注意書き・緩和策・観客導線を検討してください。");
   }
+
+  // 未成年
   if (text.includes("未成年")) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
+
+  // ✅ 美術（カテゴリ=art）
+  const hitArt =
+    text.includes("美術") || text.includes("舞台美術") || text.includes("大道具") || text.includes("小道具") ||
+    text.includes("背景") || text.includes("看板") || text.includes("ロゴ") ||
+    text.includes("キャラ") || text.includes("キャラクター") ||
+    text.includes("ポスター") || text.includes("写真") || text.includes("画像");
+  if (hitArt) {
+    add("演出", "art", "舞台美術・小道具・背景・ロゴ・写真素材などに第三者の著作物/商標が含まれると、権利侵害リスクがあります。素材の出所（自作/購入/フリー/許諾）を整理してください。");
+  }
+
+  // ✅ 衣装（カテゴリ=costume）
+  const hitCostume =
+    text.includes("衣装") || text.includes("コスプレ") || text.includes("ユニフォーム") ||
+    text.includes("制服") || text.includes("ブランド") || text.includes("商標") || text.includes("ロゴ");
+  if (hitCostume) {
+    add("演出", "costume", "衣装にブランドロゴ/キャラクターデザイン/既製品の意匠が含まれる場合、撮影・配信・SNSでの露出によりリスクが増えます。公開範囲と利用条件を確認してください。");
+  }
+
+  // ✅ SNS（カテゴリ=sns）
+  const low = (text || "").toLowerCase();
+  const hitSNS =
+    low.includes("sns") || low.includes("twitter") || low.includes("instagram") || low.includes("tiktok") ||
+    text.includes("告知") || text.includes("投稿") || text.includes("サムネ") || text.includes("リール") || text.includes("ショート") ||
+    text.includes("ハッシュタグ") || text.includes("X");
+  if (hitSNS) {
+    add("演出", "sns", "SNS告知で画像/フォント/音源/写真/映像素材を使う場合、素材ライセンスやプラットフォーム規約により利用条件が変わります。素材の出所と利用範囲を確認してください。");
+    // SNS由来のプライバシーも一緒に出す（カテゴリはprivacyのまま）
+    add("演出", "privacy", "SNS投稿は拡散力が高く、未成年・客席・楽屋の映り込み、個人特定のリスクが上がります。公開範囲/撮影ルール/同意の運用を定義してください。");
+  }
+
   if (issues.length === 0) {
-    add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出）』などの情報を追記すると精度が上がります。");
+    add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出/美術/衣装/SNS）』を追記すると精度が上がります。");
   }
   return issues;
 }
 
-// --- AI補助（ルール）: 確認質問生成 ---
+// -------------------
+// 質問生成（カテゴリ追加に合わせて）
+// -------------------
 function generateQuestions(text) {
   const t = text || "";
+  const low = t.toLowerCase();
   const q = [];
   const push = (s) => { if (!q.includes(s)) q.push(s); };
 
-  if (t.includes("配信") || t.toLowerCase().includes("youtube") || t.toLowerCase().includes("tiktok")) {
+  if (t.includes("配信") || low.includes("youtube") || low.includes("tiktok")) {
     push("配信はライブのみ？アーカイブ（後日公開）もありますか？");
     push("配信の公開範囲（限定公開/有料/全公開）はどれですか？");
     push("客席や未成年が映る可能性はありますか？撮影範囲は？");
   }
-  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源")) {
+  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源") || t.includes("歌")) {
     push("既存曲は生演奏ですか？録音音源ですか？");
     push("上演だけでなく録画/配信でも使いますか？（許諾が変わる可能性）");
     push("曲名・使用区間・使用回数を一覧にできますか？");
   }
-  if (t.includes("衣装") || t.includes("ロゴ") || t.includes("ブランド")) {
-    push("衣装や小物にロゴ/ブランド/キャラクターが映り込む範囲はどの程度ですか？");
-    push("配信やSNS掲載でも露出しますか？（規約/権利の確認）");
+  if (t.includes("台本") || t.includes("引用") || t.includes("原作") || t.includes("脚色") || t.includes("翻案")) {
+    push("引用する箇所はどこですか？（量・範囲）");
+    push("出典表示（作品名/著者/出版社など）は用意していますか？");
+    push("翻案（脚色）や改変の範囲はどの程度ですか？");
   }
-  if (t.includes("美術") || t.includes("小道具") || t.includes("背景") || t.includes("看板")) {
-    push("美術/小道具の素材の出所（自作/購入/画像流用/借用）はどれですか？");
-    push("配信やSNS掲載で美術が明確に見える形になりますか？");
+  if (t.includes("美術") || t.includes("小道具") || t.includes("背景") || t.includes("画像") || t.includes("写真") || t.includes("ロゴ")) {
+    push("美術・小道具・背景の素材は自作/購入/フリー/許諾のどれですか？出所を一覧化できますか？");
+    push("ロゴやキャラクターが入る場合、撮影/配信/SNSに載る前提ですか？");
   }
-  if (t.includes("SNS") || t.toLowerCase().includes("twitter") || t.toLowerCase().includes("instagram") || t.toLowerCase().includes("tiktok")) {
-    push("告知画像/動画に使う素材（写真・フォント・音源）の利用条件を確認しましたか？");
-    push("未成年や個人情報が含まれる場合の掲載ルールは決めていますか？");
+  if (t.includes("衣装") || t.includes("コスプレ") || t.includes("ブランド") || t.includes("ロゴ")) {
+    push("衣装は自作ですか？既製品改造ですか？ブランドロゴや意匠は含みますか？");
+    push("衣装写真をSNS/配信で公開しますか？（露出が増えるとリスク増）");
+  }
+  if (low.includes("sns") || t.includes("告知") || t.includes("投稿") || t.includes("サムネ")) {
+    push("SNS告知画像/サムネに使う写真・フォント・素材は利用条件を確認済みですか？");
+    push("BGM付き投稿（リール/ショート等）を予定していますか？音源はどうしますか？");
+    push("未成年や客席が映る可能性はありますか？公開範囲は？");
   }
   if (t.includes("未成年")) {
     push("未成年出演者の同意（保護者含む）は取得済みですか？");
     push("写真/動画の公開範囲の同意は別で取っていますか？");
   }
-  if (t.includes("実在") || t.includes("事件") || t.includes("災害")) {
-    push("当事者や関係者が特定されない表現になっていますか？");
-    push("注意書きや監修者（第三者チェック）を入れますか？");
-  }
-  if (t.includes("ストロボ") || t.includes("点滅")) {
-    push("点滅演出はどの程度の強さ/頻度ですか？注意書きは出しますか？");
-  }
-  if (!q.length) push("配信有無、素材の出所、改変範囲（脚本/演出）を追記できますか？");
 
+  if (!q.length) push("配信有無、素材の出所、改変範囲（脚本/演出/美術/衣装/SNS）を追記できますか？");
   return q;
 }
 
-// --- AI補助（ルール）: 対応案テンプレ ---
+// -------------------
+// 対応案（カテゴリに art/costume/sns を追加）
+// -------------------
 function generateActionTemplates(issues) {
   const out = [];
   const push = (s) => { if (!out.includes(s)) out.push(s); };
 
   issues.forEach((it) => {
     if (it.category === "copyright") {
-      push("権利処理の表を作成（上演/配信/録画/SNS別に：楽曲、音源、映像素材、台本、写真、ロゴ、フォント）");
+      push("権利処理の表を作成（上演/配信/録画/SNS別に：楽曲、音源、映像素材、台本、写真/フォント/ロゴ）");
       push("利用許諾の範囲を文章化（期間・地域・公開形態・二次利用）");
+    }
+    if (it.category === "art") {
+      push("美術・小道具・背景の素材出所を一覧化（自作/購入/フリー/許諾）");
+      push("ロゴ/キャラ/写真素材がある場合、撮影/配信/SNSへの露出前提で権利条件を確認");
+    }
+    if (it.category === "costume") {
+      push("衣装のロゴ/意匠/キャラ要素の有無を整理し、公開範囲（撮影/配信/SNS）を確認");
+    }
+    if (it.category === "sns") {
+      push("SNS告知素材（写真/フォント/音源/テンプレ）の利用条件を確認（商用可否・改変可否・クレジット要否）");
+      push("投稿前のチェック手順（担当/確認項目/承認）を決める");
     }
     if (it.category === "privacy") {
       push("同意取得フロー（出演者/保護者/スタッフ/映り込み）を決める");
@@ -254,7 +340,9 @@ function generateActionTemplates(issues) {
   return out;
 }
 
-// --- Tasks（チェックリスト）自動生成 ---
+// -------------------
+// Tasks（カテゴリに追従）
+// -------------------
 function generateTasksFromIssues(issues) {
   const tasks = [];
   const add = (title) => tasks.push({ id: uid(), title, status: "todo", created_at: nowISO() });
@@ -264,14 +352,17 @@ function generateTasksFromIssues(issues) {
       add("既存曲の利用一覧（曲名/区間/形態）を作成");
       add("上演/配信/録画別の許諾要否を整理");
     }
-    if (it.element === "SNS" && it.category === "copyright") {
-      add("SNS告知素材（画像/音源/フォント/ロゴ）の出所と利用条件を確認");
+    if (it.category === "copyright" && it.element === "脚本") {
+      add("引用/翻案の範囲（台本）を整理して出典表示を準備");
     }
-    if (it.element === "美術" && it.category === "copyright") {
-      add("美術/小道具の素材出所・流用有無を棚卸し");
+    if (it.category === "art") {
+      add("美術・小道具・背景の素材出所一覧（自作/購入/フリー/許諾）を作成");
     }
-    if (it.element === "衣装" && it.category === "copyright") {
-      add("衣装ロゴ/ブランド露出の有無と対応（隠す/差し替え）を決定");
+    if (it.category === "costume") {
+      add("衣装のロゴ/意匠/キャラ要素の有無を整理し、公開範囲（撮影/配信/SNS）を確認");
+    }
+    if (it.category === "sns") {
+      add("SNS告知素材（写真/フォント/音源/テンプレ）の利用条件を確認");
     }
     if (it.category === "privacy") {
       add("撮影範囲と掲示文を確定");
@@ -285,25 +376,269 @@ function generateTasksFromIssues(issues) {
   return tasks;
 }
 
+// ===================================================
+// ✅ Web検索リンク生成（カテゴリ art/costume/sns に追従）
+// ===================================================
+function extractUrlsFromText(text) {
+  const urls = [];
+  const re = /(https?:\/\/[^\s<>"'）\]]+)/g;
+  const m = String(text || "").match(re) || [];
+  m.forEach(u => {
+    const su = safeUrl(u);
+    if (su && !urls.includes(su)) urls.push(su);
+  });
+  return urls;
+}
+function buildGoogleSearchUrl(query) {
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+function buildBingSearchUrl(query) {
+  return `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+}
+
+function detectWebRiskCandidates(text) {
+  const t = String(text || "");
+  const low = t.toLowerCase();
+  const items = [];
+
+  const add = (title, element, category, reason, query) => {
+    items.push({ title, element, category, reason, query });
+  };
+
+  // 配信/収録
+  if (t.includes("配信") || t.includes("収録") || t.includes("アーカイブ") || low.includes("youtube") || low.includes("tiktok")) {
+    add(
+      "配信/収録の許諾（上演とは別）",
+      "映像",
+      "copyright",
+      "配信・収録・アーカイブは『上演』と許諾範囲が分かれることがあり、音楽・肖像・映像素材の整理が必要です。",
+      "舞台 配信 収録 許諾 権利処理 上演 違い"
+    );
+  }
+
+  // 音楽
+  if (t.includes("既存曲") || t.includes("BGM") || t.includes("カバー") || t.includes("音源") || t.includes("歌")) {
+    add(
+      "既存曲（BGM/歌/カバー）の利用許諾",
+      "音楽",
+      "copyright",
+      "既存曲は「上演」「配信/録画」「録音音源利用」で必要な許諾が変わる可能性があります。",
+      "既存曲 BGM 上演 配信 録画 許諾"
+    );
+  }
+
+  // 台本/引用
+  if (t.includes("台本") || t.includes("引用") || t.includes("原作") || t.includes("脚色") || t.includes("翻案")) {
+    add(
+      "台本・原作の引用/翻案/脚色（著作権）",
+      "脚本",
+      "copyright",
+      "引用要件や翻案（脚色/改変）の許諾が問題になりやすい領域です。出典・量・改変範囲の整理が必要です。",
+      "台本 引用 要件 著作権 翻案 脚色 許諾"
+    );
+  }
+
+  // ✅ 美術（category=art）
+  const hitArt =
+    t.includes("美術") || t.includes("舞台美術") || t.includes("大道具") || t.includes("小道具") ||
+    t.includes("背景") || t.includes("看板") || t.includes("ロゴ") ||
+    t.includes("キャラ") || t.includes("キャラクター") ||
+    t.includes("ポスター") || t.includes("写真") || t.includes("画像");
+  if (hitArt) {
+    add(
+      "舞台美術・小道具・背景素材（著作権/商標）",
+      "演出",
+      "art",
+      "舞台上の美術や小道具に他者の画像・ロゴ・キャラ等が含まれると、撮影/配信/告知で侵害リスクが上がります。素材出所の確認が必要です。",
+      "舞台美術 小道具 背景 ロゴ 画像 著作権 商標"
+    );
+  }
+
+  // ✅ 衣装（category=costume）
+  const hitCostume =
+    t.includes("衣装") || t.includes("コスプレ") || t.includes("制服") || t.includes("ブランド") || t.includes("ロゴ");
+  if (hitCostume) {
+    add(
+      "衣装（ロゴ/意匠/キャラ要素）の公開リスク",
+      "演出",
+      "costume",
+      "衣装にブランドロゴやキャラ要素がある場合、配信・SNSでの露出により利用条件確認が必要になることがあります。",
+      "衣装 ブランドロゴ コスプレ 舞台 配信 SNS 権利"
+    );
+  }
+
+  // ✅ SNS（category=sns）
+  const hitSNS =
+    low.includes("sns") || low.includes("twitter") || low.includes("instagram") || low.includes("tiktok") ||
+    t.includes("告知") || t.includes("投稿") || t.includes("サムネ") || t.includes("リール") || t.includes("ショート") ||
+    t.includes("ハッシュタグ") || t.includes("X");
+  if (hitSNS) {
+    add(
+      "SNS告知素材（画像/フォント/音源/写真）の利用条件",
+      "演出",
+      "sns",
+      "SNSは拡散されやすく、素材ライセンス違反が目立ちやすいです。フォント/写真/音源/テンプレ素材の利用条件を確認します。",
+      "SNS 告知 画像 フォント 音源 写真 利用条件 ライセンス"
+    );
+  }
+
+  // 未成年/舞台裏など
+  if (t.includes("未成年") || t.includes("高校生") || t.includes("中学生") || t.includes("子役")) {
+    add(
+      "未成年の撮影・公開（同意/プライバシー）",
+      "全体",
+      "privacy",
+      "保護者同意・公開範囲・撮影可否の運用が重要です。",
+      "未成年 出演 撮影 公開 同意書"
+    );
+  }
+  if (t.includes("楽屋") || t.includes("舞台裏") || t.includes("バックヤード") || t.includes("個人情報")) {
+    add(
+      "舞台裏/楽屋の映り込み（プライバシー）",
+      "映像",
+      "privacy",
+      "私物・個人情報の映り込みが起きやすいので公開範囲の制御が必要です。",
+      "楽屋 舞台裏 撮影 映り込み プライバシー"
+    );
+  }
+
+  if (items.length === 0) {
+    add(
+      "一般的な舞台の権利処理チェック（検出不足のため）",
+      "全体",
+      "ethics",
+      "配信有無・素材出所・改変範囲（脚本/演出/美術/衣装/SNS）の追記で精度が上がります。",
+      "舞台 権利処理 チェックリスト 台本 美術 衣装 SNS"
+    );
+  }
+
+  return items;
+}
+
+function renderWebRisks(text) {
+  clearWebError();
+
+  if (!webRisksList) {
+    showWebError("エラー：HTMLに id=\"webRisksList\" が見つかりません。");
+    return;
+  }
+
+  webRisksList.innerHTML = "";
+
+  try {
+    const items = detectWebRiskCandidates(text);
+    const memoUrls = extractUrlsFromText(text);
+
+    // メモ内URL
+    if (memoUrls.length) {
+      const box = document.createElement("div");
+      box.className = "webriskCard";
+      box.innerHTML = `
+        <div class="webriskTitle">メモ内のURL（参照候補）</div>
+        <div class="hint">メモにURLを書いていた場合、ここから添付URLへ入れられます。</div>
+        <div class="webriskActions">
+          <select class="memoUrlSelect"></select>
+          <button type="button" class="ghost btnUseMemoUrl">添付URLに反映</button>
+        </div>
+      `;
+      webRisksList.appendChild(box);
+
+      const sel = box.querySelector(".memoUrlSelect");
+      memoUrls.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u;
+        opt.textContent = u;
+        sel.appendChild(opt);
+      });
+
+      box.querySelector(".btnUseMemoUrl").addEventListener("click", () => {
+        const u = sel.value;
+        if (logAttachUrl) logAttachUrl.value = u;
+        if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = "メモ内参照URL";
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      });
+    }
+
+    // リスク候補カード
+    items.forEach((it) => {
+      const card = document.createElement("div");
+      card.className = "webriskCard";
+
+      const gUrl = buildGoogleSearchUrl(it.query);
+      const bUrl = buildBingSearchUrl(it.query);
+      const defaultMemo = `${it.title}（根拠）`;
+
+      card.innerHTML = `
+        <div class="webriskTitle">${escapeHtml(it.title)}</div>
+        <div class="webriskMeta">
+          <span class="tag">${escapeHtml(it.element)}</span>
+          <span class="tag">${escapeHtml(categoryLabel(it.category) || it.category)}</span>
+        </div>
+        <div>${escapeHtml(it.reason)}</div>
+
+        <div class="webriskActions">
+          <a href="${escapeHtml(gUrl)}" target="_blank" rel="noreferrer">🔎 Googleで検索</a>
+          <a href="${escapeHtml(bUrl)}" target="_blank" rel="noreferrer">🔎 Bingで検索</a>
+        </div>
+
+        <div class="webriskActions">
+          <input class="riskUrlInput" placeholder="見つけた根拠URLを貼る（https://...）" />
+          <button type="button" class="ghost btnApplyRiskUrl">添付URLに反映</button>
+        </div>
+
+        <div class="webriskActions">
+          <button type="button" class="ghost btnFillLogFromRisk">このリスクをログ入力欄へセット</button>
+        </div>
+      `;
+
+      const urlInput = card.querySelector(".riskUrlInput");
+      card.querySelector(".btnApplyRiskUrl").addEventListener("click", () => {
+        const u = safeUrl(urlInput.value);
+        if (!u) return alert("URLが正しくありません（https://... 形式で貼ってください）");
+        if (logAttachUrl) logAttachUrl.value = u;
+        if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = defaultMemo;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      });
+
+      card.querySelector(".btnFillLogFromRisk").addEventListener("click", () => {
+        if (logElement) logElement.value = it.element;
+        if (logCategory) logCategory.value = it.category;
+        if (logIssue) logIssue.value = `${it.title}：${it.reason}`;
+        if (logDecision) logDecision.value = "要確認";
+        if (logStatus) logStatus.value = "needs_review";
+        if (logRationale && !logRationale.value.trim()) logRationale.value = "自由記述から検出。Web根拠URLを添付して判断。";
+        if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = defaultMemo;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      });
+
+      webRisksList.appendChild(card);
+    });
+
+  } catch (e) {
+    showWebError("Webリスク表示中にエラーが出ました。\n\n" + (e?.stack || e?.message || String(e)));
+  }
+}
+
 // ------------------------
-// ✅ 期間（複数）行の追加/削除
+// 期間（複数）
 // ------------------------
 function attachDateRowEvents(rowEl) {
   const delBtn = rowEl.querySelector(".btnDelDate");
+
   delBtn?.addEventListener("click", () => {
     const rows = dateRows?.querySelectorAll(".dateRow") || [];
     if (rows.length <= 1) {
       rowEl.querySelector(".f_from").value = "";
       rowEl.querySelector(".f_to").value = "";
-      renderAll();
+      addFilterLog("date_del");
       return;
     }
     rowEl.remove();
-    renderAll();
+    addFilterLog("date_del");
   });
 
-  rowEl.querySelector(".f_from")?.addEventListener("change", renderAll);
-  rowEl.querySelector(".f_to")?.addEventListener("change", renderAll);
+  rowEl.querySelector(".f_from")?.addEventListener("change", () => addFilterLog("change"));
+  rowEl.querySelector(".f_to")?.addEventListener("change", () => addFilterLog("change"));
 }
 
 function addDateRow(from = "", to = "") {
@@ -348,7 +683,50 @@ function inAnyDateRanges(iso, ranges) {
 }
 
 // ------------------------
-// フィルタ
+// フィルタログ
+// ------------------------
+function snapshotFilters() {
+  return {
+    q: (f_q?.value || "").trim(),
+    element: f_element?.value || "",
+    category: f_category?.value || "",
+    status: f_status?.value || "",
+    dateRanges: getDateRangesFromUI()
+  };
+}
+function sameFilters(a, b) {
+  return JSON.stringify(a || {}) === JSON.stringify(b || {});
+}
+function addFilterLog(action) {
+  const d = loadData();
+  const p = d.projects[d.currentProjectId];
+  if (!p) return;
+
+  if (!Array.isArray(p.filterLogs)) p.filterLogs = [];
+
+  const filters = snapshotFilters();
+  const last = p.filterLogs[0]?.filters;
+
+  if (action === "change" && sameFilters(filters, last)) {
+    renderAll();
+    return;
+  }
+
+  p.filterLogs.unshift({
+    id: uid(),
+    at: nowISO(),
+    action,
+    filters
+  });
+
+  if (p.filterLogs.length > 200) p.filterLogs.length = 200;
+
+  saveData(d);
+  renderAll();
+}
+
+// ------------------------
+// フィルタ適用
 // ------------------------
 function getActiveFilters() {
   return {
@@ -366,8 +744,6 @@ function applyLogFilters(logs) {
     if (f.element && l.element !== f.element) return false;
     if (f.category && l.category !== f.category) return false;
     if (f.status && l.status !== f.status) return false;
-
-    // ✅ 複数期間は OR
     if (!inAnyDateRanges(l.at, f.dateRanges)) return false;
 
     if (f.q) {
@@ -379,7 +755,7 @@ function applyLogFilters(logs) {
 }
 
 // ------------------------
-// UI render
+// Render
 // ------------------------
 function renderProjects(data) {
   if (!projectSelect) return;
@@ -403,17 +779,16 @@ function renderIssues(issues) {
     li.innerHTML = `
       <div>
         <span class="tag">${escapeHtml(it.element)}</span>
-        <span class="tag">${escapeHtml(it.category)}</span>
+        <span class="tag">${escapeHtml(categoryLabel(it.category))}</span>
       </div>
       <div style="margin-top:6px;">${escapeHtml(it.issue)}</div>
       <div class="row" style="margin-top:10px;">
         <button class="ghost" data-add="1">この論点をログに入れる</button>
       </div>
     `;
-    const btn = li.querySelector("button[data-add]");
-    btn.addEventListener("click", () => {
+    li.querySelector("button[data-add]").addEventListener("click", () => {
       if (logElement) logElement.value = it.element;
-      if (logCategory) logCategory.value = it.category;
+      if (logCategory) logCategory.value = it.category; // ✅ art/costume/sns が入る
       if (logIssue) logIssue.value = it.issue;
       if (logDecision) logDecision.value = "要確認";
       if (logStatus) logStatus.value = "needs_review";
@@ -463,30 +838,11 @@ function renderLogs(data) {
       ? `<a href="${escapeHtml(attach.url)}" target="_blank" rel="noreferrer">${escapeHtml(attach.memo || "リンク")}</a>`
       : `<span style="color:#666;">なし</span>`;
 
-    const saved = l.savedFilters;
-    const savedHtml = saved ? `
-      <details>
-        <summary>保存したフィルタを見る</summary>
-        <div style="margin-top:6px; color:#333;">
-          <div><b>検索</b>: ${escapeHtml(saved.q || "")}</div>
-          <div><b>要素</b>: ${escapeHtml(saved.element || "")}</div>
-          <div><b>カテゴリ</b>: ${escapeHtml(saved.category || "")}</div>
-          <div><b>ステータス</b>: ${escapeHtml(saved.status || "")}</div>
-          <div><b>期間</b>: ${
-            (saved.dateRanges || []).length
-              ? (saved.dateRanges || []).map(r => `${escapeHtml(r.from||"")}〜${escapeHtml(r.to||"")}`).join(" / ")
-              : "（未指定）"
-          }</div>
-        </div>
-      </details>
-    ` : ``;
-
     row.innerHTML = `
       <div class="cell">
         <span class="tag">${escapeHtml(l.element)}</span>
-        <span class="tag">${escapeHtml(l.category)}</span>
+        <span class="tag">${escapeHtml(categoryLabel(l.category))}</span>
         <span class="tag">sev:${escapeHtml(l.severity || "low")}</span>
-        ${savedHtml}
       </div>
       <div class="cell">${escapeHtml(l.issue)}</div>
       <div class="cell">${escapeHtml(l.decision)}</div>
@@ -501,7 +857,6 @@ function renderLogs(data) {
       <div class="cell"><button class="ghost danger" data-del="${escapeHtml(l.id)}">×</button></div>
     `;
 
-    // ステータス変更
     row.querySelector("select[data-st]").addEventListener("change", (e) => {
       const newStatus = e.target.value;
       const d = loadData();
@@ -512,7 +867,6 @@ function renderLogs(data) {
       renderAll();
     });
 
-    // 削除
     row.querySelector("button[data-del]").addEventListener("click", () => {
       if (!confirm("このログを削除しますか？")) return;
       const d = loadData();
@@ -569,55 +923,6 @@ function renderMaterialOutputs(text, issues) {
   }
 }
 
-function renderWebRiskLinks(text) {
-  // ✅ 静的サイトでWeb本文を直接取得しない方針のため、検索リンクを出す（確実に動く）
-  if (!webRisksList) return;
-
-  const q = (text || "").trim();
-  webRisksList.innerHTML = "";
-  if (webRisksError) webRisksError.style.display = "none";
-
-  if (!q) {
-    webRisksList.innerHTML = `<div class="item"><div class="title">入力が空です</div><div>自由記述を入力すると検索リンクが表示されます。</div></div>`;
-    return;
-  }
-
-  // ある程度キーワードを抽出（超簡易）
-  const keywords = [];
-  const push = (s) => { if (s && !keywords.includes(s)) keywords.push(s); };
-
-  if (q.includes("配信") || q.includes("収録") || q.toLowerCase().includes("youtube") || q.toLowerCase().includes("tiktok")) push("配信 著作権 肖像権 許諾");
-  if (q.includes("既存曲") || q.includes("BGM") || q.includes("音源") || q.includes("カバー")) push("既存曲 上演 配信 録画 許諾");
-  if (q.includes("衣装") || q.includes("ロゴ") || q.includes("ブランド")) push("衣装 ロゴ 商標 映像 掲載");
-  if (q.includes("美術") || q.includes("小道具") || q.includes("背景") || q.includes("看板")) push("舞台美術 ロゴ 画像 著作権");
-  if (q.includes("SNS") || q.toLowerCase().includes("twitter") || q.toLowerCase().includes("instagram") || q.toLowerCase().includes("tiktok")) push("SNS 告知 画像 フォント ライセンス");
-  if (q.includes("未成年")) push("未成年 肖像権 同意書");
-  if (q.includes("実在") || q.includes("事件") || q.includes("災害")) push("実在事件 表現 倫理 配慮 注意書き");
-
-  if (keywords.length === 0) push("舞台 配信 著作権 権利処理");
-
-  // Google検索リンク（確実に動く）
-  keywords.slice(0, 6).forEach((kw) => {
-    const url = `https://www.google.com/search?q=${encodeURIComponent(kw)}`;
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div class="title">検索候補：${escapeHtml(kw)}</div>
-      <div>
-        <a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">検索する</a>
-        <button type="button" class="ghost" data-paste="${escapeHtml(url)}" style="margin-left:10px;">添付URLに反映</button>
-      </div>
-    `;
-    div.querySelector("button[data-paste]")?.addEventListener("click", () => {
-      if (logAttachUrl) logAttachUrl.value = url;
-      if (logAttachMemo && !logAttachMemo.value.trim()) logAttachMemo.value = `検索: ${kw}`;
-      // ログ欄へスクロール
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    });
-    webRisksList.appendChild(div);
-  });
-}
-
 function renderAll() {
   const data = loadData();
   renderProjects(data);
@@ -625,7 +930,9 @@ function renderAll() {
   renderDashboard(data);
 }
 
-// --- Template -> text ---
+// -------------------
+// Template -> text
+// -------------------
 function buildTemplateText() {
   const checks = {
     stream: tpl("t_stream")?.checked,
@@ -654,27 +961,32 @@ function buildTemplateText() {
   return lines.join("\n");
 }
 
-// ------------------------
+// ========================
 // Events
-// ------------------------
+// ========================
 analyzeBtn?.addEventListener("click", () => {
   const data = loadData();
   const p = data.projects[data.currentProjectId];
+
   const text = inputText?.value || "";
   const issues = extractIssues(text);
 
   renderIssues(issues);
   renderMaterialOutputs(text, issues);
-  renderWebRiskLinks(text);
+  renderWebRisks(text);
 
   const newTasks = generateTasksFromIssues(issues);
   const existingTitles = new Set((p.tasks || []).map(t => t.title));
-  newTasks.forEach(t => {
-    if (!existingTitles.has(t.title)) p.tasks.push(t);
-  });
+  newTasks.forEach(t => { if (!existingTitles.has(t.title)) p.tasks.push(t); });
 
   saveData(data);
   renderAll();
+});
+
+let memoTimer = null;
+inputText?.addEventListener("input", () => {
+  if (memoTimer) clearTimeout(memoTimer);
+  memoTimer = setTimeout(() => renderWebRisks(inputText.value || ""), 350);
 });
 
 clearBtn?.addEventListener("click", () => {
@@ -684,7 +996,7 @@ clearBtn?.addEventListener("click", () => {
   if (actionsList) actionsList.innerHTML = "";
   if (tasksList) tasksList.innerHTML = "";
   if (webRisksList) webRisksList.innerHTML = "";
-  if (webRisksError) webRisksError.style.display = "none";
+  clearWebError();
 });
 
 // Projects
@@ -693,7 +1005,7 @@ createProjectBtn?.addEventListener("click", () => {
   if (!title) return alert("案件名を入力してください");
   const data = loadData();
   const id = uid();
-  data.projects[id] = { id, title, logs: [], tasks: [] };
+  data.projects[id] = { id, title, logs: [], tasks: [], filterLogs: [] };
   data.currentProjectId = id;
   saveData(data);
   if (projectTitle) projectTitle.value = "";
@@ -719,17 +1031,6 @@ deleteProjectBtn?.addEventListener("click", () => {
   renderAll();
 });
 
-// ✅ ログ追加時に、フィルタ状態も同一ログへ保存
-function snapshotFiltersForSave() {
-  return {
-    q: (f_q?.value || "").trim(),
-    element: f_element?.value || "",
-    category: f_category?.value || "",
-    status: f_status?.value || "",
-    dateRanges: getDateRangesFromUI()
-  };
-}
-
 // Logs
 addLogBtn?.addEventListener("click", () => {
   const issue = (logIssue?.value || "").trim();
@@ -738,29 +1039,24 @@ addLogBtn?.addEventListener("click", () => {
   const data = loadData();
   const p = data.projects[data.currentProjectId];
 
-  const attUrl = (logAttachUrl?.value || "").trim();
+  const attUrl = safeUrl(logAttachUrl?.value || "");
   const attMemo = (logAttachMemo?.value || "").trim();
   const attachments = [];
   if (attUrl) attachments.push({ url: attUrl, memo: attMemo || "添付" });
 
   const severity = estimateSeverity(logElement?.value, logCategory?.value, issue);
 
-  const shouldSaveFilters = !!saveFiltersWithLog?.checked;
-  const savedFilters = shouldSaveFilters ? snapshotFiltersForSave() : null;
-
   p.logs.unshift({
     id: uid(),
     at: nowISO(),
     element: logElement?.value || "全体",
-    category: logCategory?.value || "ethics",
+    category: logCategory?.value || "ethics", // ✅ art/costume/snsが保存される
     issue,
     decision: logDecision?.value || "要確認",
     rationale: (logRationale?.value || "").trim(),
     status: logStatus?.value || "needs_review",
     severity,
-    attachments,
-    // ✅ ここに「検索/要素/カテゴリ/ステータス/期間（複数）」を1つのログとして保存
-    savedFilters
+    attachments
   });
 
   saveData(data);
@@ -785,6 +1081,7 @@ btnApplyTemplate?.addEventListener("click", () => {
   const t = buildTemplateText();
   const cur = inputText?.value || "";
   if (inputText) inputText.value = cur ? `${t}\n\n${cur}` : t;
+  renderWebRisks(inputText.value || "");
 });
 
 btnResetTemplate?.addEventListener("click", () => {
@@ -796,19 +1093,24 @@ btnResetTemplate?.addEventListener("click", () => {
   if (r) r.value = "";
 });
 
-// Filters: text/select
+// フィルタログ（デバウンス）
+let filterLogTimer = null;
+function logFilterChangeDebounced() {
+  if (filterLogTimer) clearTimeout(filterLogTimer);
+  filterLogTimer = setTimeout(() => addFilterLog("change"), 500);
+}
 [f_q, f_element, f_category, f_status].forEach(el => {
-  el?.addEventListener("input", renderAll);
-  el?.addEventListener("change", renderAll);
+  el?.addEventListener("input", () => { renderAll(); logFilterChangeDebounced(); });
+  el?.addEventListener("change", () => { renderAll(); addFilterLog("change"); });
 });
 
-// ✅ 期間（複数）: 追加ボタン
+// 期間追加
 btnAddDateRow?.addEventListener("click", () => {
   addDateRow("", "");
-  renderAll();
+  addFilterLog("date_add");
 });
 
-// ✅ 初期行にもイベント付与（HTML内の1行目）
+// 初期行
 if (dateRows) {
   const first = dateRows.querySelector(".dateRow");
   if (first) attachDateRowEvents(first);
@@ -821,15 +1123,13 @@ f_reset?.addEventListener("click", () => {
   if (f_category) f_category.value = "";
   if (f_status) f_status.value = "";
 
-  // 期間（複数）もリセット：1行だけ残す
   if (dateRows) {
     dateRows.innerHTML = "";
     addDateRow("", "");
   }
-
-  renderAll();
+  addFilterLog("reset");
 });
 
 // init
 renderAll();
-renderWebRiskLinks(inputText?.value || "");
+renderWebRisks(inputText?.value || "");
