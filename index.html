@@ -4,9 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>権利処理・管理システム</title>
-
-  <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-7">
+  <link rel="stylesheet" href="style.css?v=20260202-8">
 </head>
 <body>
   <header class="wrap">
@@ -113,7 +111,7 @@
       <div id="webRisksError" class="errorBox" style="display:none;"></div>
     </section>
 
-    <!-- 下：案件＋ログ（⑤だけ合体し直し） -->
+    <!-- 下：案件＋ログ -->
     <section class="card" style="grid-column:1/-1;">
       <h2>④ 案件（Project）</h2>
 
@@ -129,9 +127,9 @@
 
       <hr />
 
-      <h2>⑤ 合意形成ログ（フィルタ＋入力を統一）</h2>
+      <h2>⑤ 合意形成ログ（ログ追加が確実に動く版）</h2>
 
-      <!-- ✅ ⑤：フィルタ＆ログ共通設定（要素/カテゴリ/ステータスはここ1つだけ） -->
+      <!-- ✅ ⑤：検索＋共通設定（要素/カテゴリ/ステータスはここ1つだけ） -->
       <div class="filters">
         <div class="grid4">
           <div>
@@ -140,7 +138,7 @@
           </div>
 
           <div>
-            <label>要素（フィルタ兼ログ）</label>
+            <label>要素（ログ）</label>
             <select id="logElement">
               <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
               <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
@@ -148,7 +146,7 @@
           </div>
 
           <div>
-            <label>カテゴリ（フィルタ兼ログ）</label>
+            <label>カテゴリ（ログ）</label>
             <select id="logCategory">
               <option value="copyright">copyright</option>
               <option value="privacy">privacy</option>
@@ -159,13 +157,21 @@
           </div>
 
           <div>
-            <label>ステータス（フィルタ兼ログ）</label>
+            <label>ステータス（ログ）</label>
             <select id="logStatus">
               <option value="needs_review">要確認</option>
               <option value="doing">対応中</option>
               <option value="done">完了</option>
             </select>
           </div>
+        </div>
+
+        <!-- ✅ 追加：要素/カテゴリ/ステータスで絞り込むか -->
+        <div class="row" style="margin-top:10px;">
+          <label class="check">
+            <input type="checkbox" id="useEcsFilter">
+            要素/カテゴリ/ステータスでも絞り込む（ONにすると表示が減ります）
+          </label>
         </div>
 
         <div style="margin-top:10px;">
@@ -185,13 +191,12 @@
             <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
           </div>
 
-          <div class="hint">※期間は「このログの対象期間」として保存されます。表示の絞り込みにも使われます。</div>
+          <div class="hint">※期間はログにも保存され、絞り込みにも使えます。</div>
         </div>
       </div>
 
       <hr />
 
-      <!-- ✅ ログ本文入力（⑤の共通設定を使って保存される） -->
       <label style="margin-top:10px;">論点（issue）</label>
       <textarea id="logIssue" placeholder="例：SNS告知画像の素材出所（写真/フォント/ロゴ）を確認"></textarea>
 
@@ -227,6 +232,8 @@
         <button type="button" class="ghost danger" id="clearLogsBtn">ログ全削除</button>
       </div>
 
+      <div id="logAddResult" class="hint" style="margin-top:8px;"></div>
+
       <h3 style="margin-top:14px;">ログ一覧</h3>
       <div id="logsTable" class="table"></div>
 
@@ -238,6 +245,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202-7"></script>
+  <script src="app.js?v=20260202-8"></script>
 </body>
 </html>
