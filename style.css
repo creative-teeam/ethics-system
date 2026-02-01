@@ -294,7 +294,7 @@ button.danger:hover,
   user-select: none;
 }
 
-/* ✅ logs table（期間列を追加） */
+/* logs table */
 .table {
   margin-top: 10px;
   display: grid;
