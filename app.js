@@ -1,65 +1,14 @@
 const STORE_KEY = "stageEthicsData_v1";
 
-// --- DOM ---
-const inputText = document.getElementById("inputText");
-const analyzeBtn = document.getElementById("analyzeBtn");
-const clearBtn = document.getElementById("clearBtn");
-const issuesList = document.getElementById("issuesList");
-const questionsList = document.getElementById("questionsList");
-const actionsList = document.getElementById("actionsList");
-const tasksList = document.getElementById("tasksList");
-
-// Projects
-const projectTitle = document.getElementById("projectTitle");
-const createProjectBtn = document.getElementById("createProjectBtn");
-const projectSelect = document.getElementById("projectSelect");
-const deleteProjectBtn = document.getElementById("deleteProjectBtn");
-
-// ⑤ Unified (filter + log common)
-const f_q = document.getElementById("f_q");
-const logElement = document.getElementById("logElement");   // ✅ filter兼ログ（統一）
-const logCategory = document.getElementById("logCategory"); // ✅ filter兼ログ（統一）
-const logStatus = document.getElementById("logStatus");     // ✅ filter兼ログ（統一）
-const f_reset = document.getElementById("f_reset");
-
-// periods UI
-const dateRows = document.getElementById("dateRows");
-const btnAddDateRow = document.getElementById("btnAddDateRow");
-
-// Log body input
-const logIssue = document.getElementById("logIssue");
-const logDecision = document.getElementById("logDecision");
-const logRationale = document.getElementById("logRationale");
-const logAttachUrl = document.getElementById("logAttachUrl");
-const logAttachMemo = document.getElementById("logAttachMemo");
-const addLogBtn = document.getElementById("addLogBtn");
-const clearLogsBtn = document.getElementById("clearLogsBtn");
-const logsTable = document.getElementById("logsTable");
-
-// KPI
-const kpiNeeds = document.getElementById("kpiNeeds");
-const kpiDoing = document.getElementById("kpiDoing");
-const kpiDone = document.getElementById("kpiDone");
-const progressPct = document.getElementById("progressPct");
-const progressFill = document.getElementById("progressFill");
-
-// Web risks UI
-const webRisksList = document.getElementById("webRisksList");
-const webRisksError = document.getElementById("webRisksError");
-const webQuery = document.getElementById("webQuery");
-const btnWebSearch = document.getElementById("btnWebSearch");
-
-// Template
-const btnApplyTemplate = document.getElementById("btnApplyTemplate");
-const btnResetTemplate = document.getElementById("btnResetTemplate");
-const tpl = (id) => document.getElementById(id);
-
-// --- utils ---
+// ---------- helpers ----------
 function uid() {
-  return crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+  try {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  } catch {}
+  return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
 }
 function nowISO() { return new Date().toISOString(); }
-function escapeHtml(s) {
+function esc(s) {
   return String(s ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
@@ -67,15 +16,84 @@ function escapeHtml(s) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-function safeText(s) { return String(s ?? "").trim(); }
+function trim(s) { return String(s ?? "").trim(); }
 
-// --- Data model ---
+// ---------- DOM ----------
+function $(id) { return document.getElementById(id); }
+
+let inputText, analyzeBtn, clearBtn, issuesList, questionsList, actionsList, tasksList;
+let projectTitle, createProjectBtn, projectSelect, deleteProjectBtn;
+
+let f_q, useEcsFilter;
+let logElement, logCategory, logStatus;
+let dateRows, btnAddDateRow, f_reset;
+
+let logIssue, logDecision, logRationale, logAttachUrl, logAttachMemo;
+let addLogBtn, clearLogsBtn, logsTable, logAddResult;
+
+let kpiNeeds, kpiDoing, kpiDone, progressPct, progressFill;
+
+let webRisksList, webRisksError, webQuery, btnWebSearch;
+let btnApplyTemplate, btnResetTemplate;
+
+function bindDom() {
+  inputText = $("inputText");
+  analyzeBtn = $("analyzeBtn");
+  clearBtn = $("clearBtn");
+  issuesList = $("issuesList");
+  questionsList = $("questionsList");
+  actionsList = $("actionsList");
+  tasksList = $("tasksList");
+
+  projectTitle = $("projectTitle");
+  createProjectBtn = $("createProjectBtn");
+  projectSelect = $("projectSelect");
+  deleteProjectBtn = $("deleteProjectBtn");
+
+  f_q = $("f_q");
+  useEcsFilter = $("useEcsFilter");
+
+  logElement = $("logElement");
+  logCategory = $("logCategory");
+  logStatus = $("logStatus");
+
+  dateRows = $("dateRows");
+  btnAddDateRow = $("btnAddDateRow");
+  f_reset = $("f_reset");
+
+  logIssue = $("logIssue");
+  logDecision = $("logDecision");
+  logRationale = $("logRationale");
+  logAttachUrl = $("logAttachUrl");
+  logAttachMemo = $("logAttachMemo");
+
+  addLogBtn = $("addLogBtn");
+  clearLogsBtn = $("clearLogsBtn");
+  logsTable = $("logsTable");
+  logAddResult = $("logAddResult");
+
+  kpiNeeds = $("kpiNeeds");
+  kpiDoing = $("kpiDoing");
+  kpiDone = $("kpiDone");
+  progressPct = $("progressPct");
+  progressFill = $("progressFill");
+
+  webRisksList = $("webRisksList");
+  webRisksError = $("webRisksError");
+  webQuery = $("webQuery");
+  btnWebSearch = $("btnWebSearch");
+
+  btnApplyTemplate = $("btnApplyTemplate");
+  btnResetTemplate = $("btnResetTemplate");
+}
+
+// ---------- storage ----------
 function loadData() {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.5.0",
+      schemaVersion: "2.6.0",
       currentProjectId: firstId,
       projects: { [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [] } }
     };
@@ -84,46 +102,42 @@ function loadData() {
   }
   try {
     const d = JSON.parse(raw);
-    return migrateIfNeeded(d);
+    return migrate(d);
   } catch {
     localStorage.removeItem(STORE_KEY);
     return loadData();
   }
 }
-function saveData(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+function saveData(d) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(d));
 }
-function migrateIfNeeded(data) {
-  if (!data.schemaVersion) data.schemaVersion = "1.0.0";
-  if (!data.projects) data.projects = {};
-  const ids = Object.keys(data.projects);
-
-  if (!data.currentProjectId || !data.projects[data.currentProjectId]) {
-    data.currentProjectId = ids[0] || null;
+function migrate(d) {
+  if (!d.projects) d.projects = {};
+  if (!d.currentProjectId || !d.projects[d.currentProjectId]) {
+    const ids = Object.keys(d.projects);
+    if (ids.length) d.currentProjectId = ids[0];
+    else {
+      const firstId = uid();
+      d.currentProjectId = firstId;
+      d.projects[firstId] = { id: firstId, title: "デモ案件", logs: [], tasks: [] };
+    }
   }
-
-  ids.forEach((pid) => {
-    const p = data.projects[pid];
+  for (const pid of Object.keys(d.projects)) {
+    const p = d.projects[pid];
     if (!Array.isArray(p.logs)) p.logs = [];
     if (!Array.isArray(p.tasks)) p.tasks = [];
-
     p.logs.forEach((l) => {
       if (!l.id) l.id = uid();
       if (!l.at) l.at = nowISO();
-      if (!l.status) l.status = "needs_review";
-      if (!l.decision) l.decision = "要確認";
       if (!Array.isArray(l.attachments)) l.attachments = [];
-      if (!l.rationale) l.rationale = "";
-      if (!Array.isArray(l.periods)) l.periods = []; // ✅ 追加：ログに期間を保存
-      if (!l.filterSnapshot) l.filterSnapshot = null;
+      if (!Array.isArray(l.periods)) l.periods = [];
     });
-  });
-
-  data.schemaVersion = "2.5.0";
-  return data;
+  }
+  d.schemaVersion = "2.6.0";
+  return d;
 }
 
-// --- severity（簡易） ---
+// ---------- severity ----------
 function estimateSeverity(element, category, issueText) {
   const t = (issueText || "").toLowerCase();
   if (category === "safety") return "high";
@@ -133,14 +147,14 @@ function estimateSeverity(element, category, issueText) {
   return "low";
 }
 
-// --- Rule-based extractor（①〜③用：最低限） ---
+// ---------- extractor (①〜③ 最低限) ----------
 function extractIssues(text) {
   const raw = text || "";
   const t = raw.toLowerCase();
   const issues = [];
   const add = (element, category, issue) => issues.push({ element, category, issue });
 
-  if (raw.includes("配信") || raw.includes("収録") || t.includes("youtube") || t.includes("tiktok") || raw.includes("アーカイブ")) {
+  if (raw.includes("配信") || raw.includes("収録") || t.includes("youtube") || raw.includes("アーカイブ")) {
     add("映像", "copyright", "配信/収録がある場合、上演と配信で必要な許諾が分かれる可能性があります。形態ごとに権利処理を整理してください。");
     add("映像", "privacy", "舞台裏/楽屋/未成年の映り込みや個人特定のリスクがあります。撮影範囲・同意取得・公開範囲を設計してください。");
   }
@@ -230,9 +244,7 @@ function generateTasksFromIssues(issues) {
   return uniq.length ? uniq : [{ id: uid(), title: "不足情報の確認（配信/素材出所/公開範囲）", status: "todo", created_at: nowISO() }];
 }
 
-// ------------------------
-// ✅ 期間（複数行）UI
-// ------------------------
+// ---------- periods UI ----------
 function attachDateRowEvents(rowEl) {
   const delBtn = rowEl.querySelector(".btnDelDate");
   delBtn?.addEventListener("click", () => {
@@ -256,9 +268,9 @@ function addDateRow(from = "", to = "") {
   const row = document.createElement("div");
   row.className = "dateRow";
   row.innerHTML = `
-    <input class="f_from" type="date" value="${escapeHtml(from)}" />
+    <input class="f_from" type="date" value="${esc(from)}" />
     <span class="dateSep">〜</span>
-    <input class="f_to" type="date" value="${escapeHtml(to)}" />
+    <input class="f_to" type="date" value="${esc(to)}" />
     <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
   `;
   dateRows.appendChild(row);
@@ -278,8 +290,6 @@ function getDateRangesFromUI() {
   return ranges;
 }
 
-// --- 期間の重なり判定（フィルタ用）
-// どちらも from/to が空の可能性あり。空は無限として扱う。
 function normalizeRange(r) {
   const from = r.from || "0000-01-01";
   const to = r.to || "9999-12-31";
@@ -291,53 +301,47 @@ function rangesOverlap(a, b) {
   return !(A.to < B.from || B.to < A.from);
 }
 function logMatchesFilterPeriods(logPeriods, filterPeriods) {
-  if (!filterPeriods || filterPeriods.length === 0) return true; // フィルタ期間なし→全部
-  if (!logPeriods || logPeriods.length === 0) return false;      // フィルタ期間あり＆ログに期間なし→除外
+  if (!filterPeriods || filterPeriods.length === 0) return true;
+  if (!logPeriods || logPeriods.length === 0) return false;
   return filterPeriods.some(fp => logPeriods.some(lp => rangesOverlap(fp, lp)));
 }
 
-// ------------------------
-// ⑤ フィルタ（要素/カテゴリ/ステータスは logElement/logCategory/logStatus を使う）
-// ------------------------
+// ---------- filters ----------
 function getActiveFilters() {
   return {
     q: (f_q?.value || "").trim().toLowerCase(),
+    dateRanges: getDateRangesFromUI(),
+    useEcs: !!useEcsFilter?.checked,
     element: logElement?.value || "",
     category: logCategory?.value || "",
-    status: logStatus?.value || "",
-    dateRanges: getDateRangesFromUI()
+    status: logStatus?.value || ""
   };
 }
 
 function applyLogFilters(logs) {
   const f = getActiveFilters();
   return logs.filter((l) => {
-    // element/category/status は統一UIなので、常に指定される
-    // 「全部」概念がないので、フィルタとして扱うために
-    // ここでは "空なら全て" は不要。常に一致させると絞り込み強すぎなので、
-    // 代わりに「フィルタON/OFF」を q と期間で行う設計。
-    // ただしユーザーが選んだ要素/カテゴリ/ステータスで絞りたいので、適用する。
-    if (f.element && l.element !== f.element) return false;
-    if (f.category && l.category !== f.category) return false;
-    if (f.status && l.status !== f.status) return false;
+    // ✅ デフォルトでは要素/カテゴリ/ステータスで絞り込まない（追加したログが必ず見える）
+    if (f.useEcs) {
+      if (f.element && l.element !== f.element) return false;
+      if (f.category && l.category !== f.category) return false;
+      if (f.status && l.status !== f.status) return false;
+    }
 
-    // ✅ 期間は log.periods に対して重なりで判定
     if (f.dateRanges.length > 0) {
       if (!logMatchesFilterPeriods(l.periods || [], f.dateRanges)) return false;
     }
 
     if (f.q) {
       const att = (l.attachments?.[0] || {});
-      const hay = `${l.issue || ""} ${l.rationale || ""} ${att.url || ""} ${att.memo || ""} ${JSON.stringify(l.periods || [])} ${JSON.stringify(l.filterSnapshot || {})}`.toLowerCase();
+      const hay = `${l.issue || ""} ${l.rationale || ""} ${att.url || ""} ${att.memo || ""} ${JSON.stringify(l.periods || [])}`.toLowerCase();
       if (!hay.includes(f.q)) return false;
     }
     return true;
   });
 }
 
-// ------------------------
-// Projects render
-// ------------------------
+// ---------- render ----------
 function renderProjects(data) {
   if (!projectSelect) return;
   projectSelect.innerHTML = "";
@@ -351,9 +355,6 @@ function renderProjects(data) {
   projectSelect.value = data.currentProjectId;
 }
 
-// ------------------------
-// Issues / outputs render（①〜③）
-// ------------------------
 function renderIssues(issues) {
   if (!issuesList) return;
   issuesList.innerHTML = "";
@@ -362,17 +363,16 @@ function renderIssues(issues) {
     const li = document.createElement("li");
     li.innerHTML = `
       <div>
-        <span class="tag">${escapeHtml(it.element)}</span>
-        <span class="tag">${escapeHtml(it.category)}</span>
+        <span class="tag">${esc(it.element)}</span>
+        <span class="tag">${esc(it.category)}</span>
       </div>
-      <div style="margin-top:6px;">${escapeHtml(it.issue)}</div>
+      <div style="margin-top:6px;">${esc(it.issue)}</div>
       <div class="row" style="margin-top:10px;">
         <button type="button" class="ghost" data-add="1">この論点をログに入れる</button>
       </div>
     `;
 
     li.querySelector("button[data-add]")?.addEventListener("click", () => {
-      // ✅ ⑤は統一UIなので、ここへセットするだけでログに使える
       if (logElement) logElement.value = it.element;
       if (logCategory) logCategory.value = it.category;
       if (logIssue) logIssue.value = it.issue;
@@ -380,7 +380,7 @@ function renderIssues(issues) {
       if (logDecision) logDecision.value = "要確認";
       if (logRationale) logRationale.value = "";
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      renderAll(); // フィルタにも影響するので更新
+      renderAll();
     });
 
     issuesList.appendChild(li);
@@ -414,77 +414,9 @@ function renderMaterialOutputs(text, issues) {
   }
 }
 
-// ------------------------
-// Web risks（③） ※簡易（前回の仕様維持）
-// ------------------------
-function buildSearchUrl(query) {
-  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-}
-function defaultWebItems() {
-  return [
-    { title: "舞台上演と配信の権利処理", query: "舞台 上演 配信 許諾 公衆送信権 実演家 肖像権", memo: "配信/録画/公衆送信" },
-    { title: "SNS告知素材（画像・フォント・ロゴ）", query: "SNS 告知 画像 フォント ロゴ 著作権 引用 スクリーンショット", memo: "SNS素材/フォント/ロゴ" },
-    { title: "舞台美術（写真・ロゴ・キャラ）の扱い", query: "舞台 美術 ロゴ キャラクター 写真 著作権 商標", memo: "美術/ロゴ/キャラ" },
-    { title: "衣装（既製品・ブランド）の扱い", query: "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", memo: "衣装/ブランド/ロゴ" },
-    { title: "未成年・同意・撮影の配慮", query: "未成年 出演 同意書 撮影 公開範囲 SNS", memo: "未成年/同意/公開範囲" },
-  ].map((it) => ({ ...it, url: buildSearchUrl(it.query) }));
-}
-function buildWebRiskItems(text) {
-  const raw = safeText(text);
-  if (!raw) return defaultWebItems();
-  const items = [];
-  const push = (title, query, memo) => items.push({ title, query, memo, url: buildSearchUrl(query) });
-
-  if (/sns|告知|twitter|instagram|tiktok|x/i.test(raw)) push("SNS告知の権利・素材", "SNS 告知 画像 フォント ロゴ 著作権 利用規約", "SNS");
-  if (/(美術|小道具|大道具|背景|ロゴ|キャラ|商標)/.test(raw)) push("美術の権利確認", "舞台 美術 ロゴ キャラクター 写真 著作権 商標", "美術");
-  if (/(衣装|既製品|ブランド|コス)/.test(raw)) push("衣装の権利確認", "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", "衣装");
-  if (/(配信|収録|youtube|tiktok|アーカイブ)/i.test(raw)) push("配信の権利処理", "舞台 配信 許諾 公衆送信権 実演家 肖像", "配信");
-  if (/(既存曲|BGM|音源)/.test(raw)) push("既存曲の許諾", "既存曲 上演 配信 録画 許諾 JASRAC", "音楽");
-
-  push("自由記述から総合検索", `舞台 著作権 肖像権 許諾 ${raw.slice(0, 120)}`, "総合");
-  return items.slice(0, 12);
-}
-function renderWebRisks(text) {
-  if (!webRisksList) return;
-  if (webRisksError) webRisksError.style.display = "none";
-  webRisksList.innerHTML = "";
-  const items = buildWebRiskItems(text);
-
-  items.forEach((it) => {
-    const box = document.createElement("div");
-    box.className = "webriskItem";
-    box.innerHTML = `
-      <div class="webriskTop">
-        <span class="webriskTitle">${escapeHtml(it.title)}</span>
-        <span class="tag">${escapeHtml(it.memo || "")}</span>
-      </div>
-      <div style="margin-top:6px;">
-        <a href="${escapeHtml(it.url)}" target="_blank" rel="noreferrer">検索を開く</a>
-        <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${escapeHtml(it.query)}）</span>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <button type="button" class="success" data-apply="1">添付URLに反映</button>
-      </div>
-    `;
-    box.querySelector("button[data-apply]")?.addEventListener("click", () => {
-      if (logAttachUrl) logAttachUrl.value = it.url;
-      if (logAttachMemo) logAttachMemo.value = it.memo || "";
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    });
-    webRisksList.appendChild(box);
-  });
-}
-
-// ------------------------
-// ⑤ Logs render（期間列を表示）
-// ------------------------
 function formatPeriods(periods) {
   if (!periods || periods.length === 0) return "—";
-  return periods.map(p => {
-    const a = p.from || "未設定";
-    const b = p.to || "未設定";
-    return `${a}〜${b}`;
-  }).join(" / ");
+  return periods.map(p => `${p.from || "未設定"}〜${p.to || "未設定"}`).join(" / ");
 }
 
 function renderLogs(data) {
@@ -521,29 +453,25 @@ function renderLogs(data) {
 
     const attach = (l.attachments || [])[0];
     const attachHtml = attach?.url
-      ? `<a href="${escapeHtml(attach.url)}" target="_blank" rel="noreferrer">${escapeHtml(attach.memo || "リンク")}</a>`
+      ? `<a href="${esc(attach.url)}" target="_blank" rel="noreferrer">${esc(attach.memo || "リンク")}</a>`
       : `<span style="color:#666;">添付なし</span>`;
-
-    const periodsText = formatPeriods(l.periods);
-    const snap = l.filterSnapshot ? `<div class="hint" style="margin-top:6px;">保存時検索: ${escapeHtml(l.filterSnapshot.q || "—")}</div>` : "";
 
     row.innerHTML = `
       <div class="cell">
-        <span class="tag">${escapeHtml(l.element)}</span>
-        <span class="tag">${escapeHtml(l.category)}</span>
-        <span class="tag">sev:${escapeHtml(l.severity || "low")}</span>
+        <span class="tag">${esc(l.element)}</span>
+        <span class="tag">${esc(l.category)}</span>
+        <span class="tag">sev:${esc(l.severity || "low")}</span>
       </div>
 
       <div class="cell">
-        ${escapeHtml(l.issue)}
-        ${l.rationale ? `<div class="hint" style="margin-top:6px;">理由：${escapeHtml(l.rationale)}</div>` : ""}
-        ${snap}
+        ${esc(l.issue)}
+        ${l.rationale ? `<div class="hint" style="margin-top:6px;">理由：${esc(l.rationale)}</div>` : ""}
       </div>
 
-      <div class="cell">${escapeHtml(l.decision || "")}</div>
+      <div class="cell">${esc(l.decision || "")}</div>
 
       <div class="cell">
-        <select data-st="${escapeHtml(l.id)}">
+        <select data-st="${esc(l.id)}">
           <option value="needs_review" ${l.status === "needs_review" ? "selected" : ""}>要確認</option>
           <option value="doing" ${l.status === "doing" ? "selected" : ""}>対応中</option>
           <option value="done" ${l.status === "done" ? "selected" : ""}>完了</option>
@@ -551,12 +479,12 @@ function renderLogs(data) {
       </div>
 
       <div class="cell">
-        <div>${escapeHtml(periodsText)}</div>
+        <div>${esc(formatPeriods(l.periods))}</div>
         <div style="margin-top:6px;">${attachHtml}</div>
       </div>
 
       <div class="cell">
-        <button type="button" class="ghost danger" data-del="${escapeHtml(l.id)}">×</button>
+        <button type="button" class="ghost danger" data-del="${esc(l.id)}">×</button>
       </div>
     `;
 
@@ -606,9 +534,67 @@ function renderAll() {
   renderDashboard(data);
 }
 
-// ------------------------
-// Template -> text（④以前維持）
-// ------------------------
+// ---------- web risks ----------
+function buildSearchUrl(query) {
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+function defaultWebItems() {
+  return [
+    { title: "舞台上演と配信の権利処理", query: "舞台 上演 配信 許諾 公衆送信権 実演家 肖像権", memo: "配信/録画/公衆送信" },
+    { title: "SNS告知素材（画像・フォント・ロゴ）", query: "SNS 告知 画像 フォント ロゴ 著作権 引用", memo: "SNS素材/フォント/ロゴ" },
+    { title: "舞台美術（写真・ロゴ・キャラ）の扱い", query: "舞台 美術 ロゴ キャラクター 写真 著作権 商標", memo: "美術/ロゴ/キャラ" },
+    { title: "衣装（既製品・ブランド）の扱い", query: "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", memo: "衣装/ブランド/ロゴ" },
+    { title: "未成年・同意・撮影の配慮", query: "未成年 出演 同意書 撮影 公開範囲 SNS", memo: "未成年/同意/公開範囲" },
+  ].map((it) => ({ ...it, url: buildSearchUrl(it.query) }));
+}
+function buildWebRiskItems(text) {
+  const raw = trim(text);
+  if (!raw) return defaultWebItems();
+  const items = [];
+  const push = (title, query, memo) => items.push({ title, query, memo, url: buildSearchUrl(query) });
+
+  if (/sns|告知|twitter|instagram|tiktok|x/i.test(raw)) push("SNS告知の権利・素材", "SNS 告知 画像 フォント ロゴ 著作権 利用規約", "SNS");
+  if (/(美術|小道具|大道具|背景|ロゴ|キャラ|商標)/.test(raw)) push("美術の権利確認", "舞台 美術 ロゴ キャラクター 写真 著作権 商標", "美術");
+  if (/(衣装|既製品|ブランド|コス)/.test(raw)) push("衣装の権利確認", "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", "衣装");
+  if (/(配信|収録|youtube|tiktok|アーカイブ)/i.test(raw)) push("配信の権利処理", "舞台 配信 許諾 公衆送信権 実演家 肖像", "配信");
+  if (/(既存曲|BGM|音源)/.test(raw)) push("既存曲の許諾", "既存曲 上演 配信 録画 許諾 JASRAC", "音楽");
+
+  push("自由記述から総合検索", `舞台 著作権 肖像権 許諾 ${raw.slice(0, 120)}`, "総合");
+  return items.slice(0, 12);
+}
+function renderWebRisks(text) {
+  if (!webRisksList) return;
+  if (webRisksError) webRisksError.style.display = "none";
+  webRisksList.innerHTML = "";
+  const items = buildWebRiskItems(text);
+
+  items.forEach((it) => {
+    const box = document.createElement("div");
+    box.className = "webriskItem";
+    box.innerHTML = `
+      <div class="webriskTop">
+        <span class="webriskTitle">${esc(it.title)}</span>
+        <span class="tag">${esc(it.memo || "")}</span>
+      </div>
+      <div style="margin-top:6px;">
+        <a href="${esc(it.url)}" target="_blank" rel="noreferrer">検索を開く</a>
+        <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${esc(it.query)}）</span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button type="button" class="success" data-apply="1">添付URLに反映</button>
+      </div>
+    `;
+    box.querySelector("button[data-apply]")?.addEventListener("click", () => {
+      if (logAttachUrl) logAttachUrl.value = it.url;
+      if (logAttachMemo) logAttachMemo.value = it.memo || "";
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    });
+    webRisksList.appendChild(box);
+  });
+}
+
+// ---------- template ----------
+function tpl(id) { return document.getElementById(id); }
 function buildTemplateText() {
   const checks = {
     stream: tpl("t_stream")?.checked,
@@ -635,231 +621,250 @@ function buildTemplateText() {
   return lines.join("\n");
 }
 
-// ------------------------
-// Events（①〜④）
-// ------------------------
-analyzeBtn?.addEventListener("click", () => {
-  const data = loadData();
-  const p = data.projects[data.currentProjectId];
+// ---------- main ----------
+function setupEvents() {
+  // ①解析
+  analyzeBtn?.addEventListener("click", () => {
+    const data = loadData();
+    const p = data.projects[data.currentProjectId];
 
-  const text = inputText?.value || "";
-  const issues = extractIssues(text);
+    const text = inputText?.value || "";
+    const issues = extractIssues(text);
 
-  renderIssues(issues);
-  renderMaterialOutputs(text, issues);
-  renderWebRisks(text);
+    renderIssues(issues);
+    renderMaterialOutputs(text, issues);
+    renderWebRisks(text);
 
-  const newTasks = generateTasksFromIssues(issues);
-  const existingTitles = new Set((p.tasks || []).map((t) => t.title));
-  newTasks.forEach((t) => {
-    if (!existingTitles.has(t.title)) p.tasks.push(t);
+    const newTasks = generateTasksFromIssues(issues);
+    const existingTitles = new Set((p.tasks || []).map((t) => t.title));
+    newTasks.forEach((t) => {
+      if (!existingTitles.has(t.title)) p.tasks.push(t);
+    });
+
+    saveData(data);
+    renderAll();
   });
 
-  saveData(data);
-  renderAll();
-});
-
-let webTimer = null;
-function scheduleWebUpdate() {
-  if (webTimer) clearTimeout(webTimer);
-  webTimer = setTimeout(() => renderWebRisks(inputText?.value || ""), 120);
-}
-inputText?.addEventListener("input", scheduleWebUpdate);
-
-btnWebSearch?.addEventListener("click", () => {
-  const q = safeText(webQuery?.value || "");
-  if (!q) return alert("キーワードを入力してください。");
-  const url = buildSearchUrl(q);
-
-  const box = document.createElement("div");
-  box.className = "webriskItem";
-  box.innerHTML = `
-    <div class="webriskTop">
-      <span class="webriskTitle">手動追加検索</span>
-      <span class="tag">手動入力</span>
-    </div>
-    <div style="margin-top:6px;">
-      <a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">検索を開く</a>
-      <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${escapeHtml(q)}）</span>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <button type="button" class="success" data-apply="1">添付URLに反映</button>
-    </div>
-  `;
-  box.querySelector("button[data-apply]")?.addEventListener("click", () => {
-    if (logAttachUrl) logAttachUrl.value = url;
-    if (logAttachMemo) logAttachMemo.value = "手動入力";
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  // 入力で根拠候補更新
+  let webTimer = null;
+  inputText?.addEventListener("input", () => {
+    if (webTimer) clearTimeout(webTimer);
+    webTimer = setTimeout(() => renderWebRisks(inputText?.value || ""), 120);
   });
 
-  webRisksList?.prepend(box);
-  if (webQuery) webQuery.value = "";
-});
+  // 手動検索リンク追加
+  btnWebSearch?.addEventListener("click", () => {
+    const q = trim(webQuery?.value || "");
+    if (!q) return alert("キーワードを入力してください。");
+    const url = buildSearchUrl(q);
 
-clearBtn?.addEventListener("click", () => {
-  if (inputText) inputText.value = "";
-  if (issuesList) issuesList.innerHTML = "";
-  if (questionsList) questionsList.innerHTML = "";
-  if (actionsList) actionsList.innerHTML = "";
-  if (tasksList) tasksList.innerHTML = "";
-  renderWebRisks("");
-});
+    const box = document.createElement("div");
+    box.className = "webriskItem";
+    box.innerHTML = `
+      <div class="webriskTop">
+        <span class="webriskTitle">手動追加検索</span>
+        <span class="tag">手動入力</span>
+      </div>
+      <div style="margin-top:6px;">
+        <a href="${esc(url)}" target="_blank" rel="noreferrer">検索を開く</a>
+        <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${esc(q)}）</span>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button type="button" class="success" data-apply="1">添付URLに反映</button>
+      </div>
+    `;
+    box.querySelector("button[data-apply]")?.addEventListener("click", () => {
+      if (logAttachUrl) logAttachUrl.value = url;
+      if (logAttachMemo) logAttachMemo.value = "手動入力";
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    });
 
-// Projects
-createProjectBtn?.addEventListener("click", () => {
-  const title = safeText(projectTitle?.value || "");
-  if (!title) return alert("案件名を入力してください");
-
-  const data = loadData();
-  const id = uid();
-  data.projects[id] = { id, title, logs: [], tasks: [] };
-  data.currentProjectId = id;
-  saveData(data);
-
-  if (projectTitle) projectTitle.value = "";
-  renderAll();
-});
-
-projectSelect?.addEventListener("change", () => {
-  const data = loadData();
-  data.currentProjectId = projectSelect.value;
-  saveData(data);
-  renderAll();
-});
-
-deleteProjectBtn?.addEventListener("click", () => {
-  const data = loadData();
-  const id = data.currentProjectId;
-  const keys = Object.keys(data.projects);
-
-  if (keys.length <= 1) return alert("最後の案件は削除できません");
-  if (!confirm("この案件を削除しますか？（ログも消えます）")) return;
-
-  delete data.projects[id];
-  data.currentProjectId = Object.keys(data.projects)[0];
-  saveData(data);
-  renderAll();
-});
-
-// Template
-btnApplyTemplate?.addEventListener("click", () => {
-  const t = buildTemplateText();
-  const cur = inputText?.value || "";
-  if (inputText) inputText.value = cur ? `${t}\n\n${cur}` : t;
-  scheduleWebUpdate();
-});
-
-btnResetTemplate?.addEventListener("click", () => {
-  [
-    "t_stream","t_archive","t_existing_music","t_recorded_music",
-    "t_minors","t_backstage","t_strobe","t_real_event"
-  ].forEach((id) => {
-    const el = tpl(id);
-    if (el) el.checked = false;
-  });
-});
-
-// ------------------------
-// ✅ ⑤：ログ追加（期間も保存／フィルタ設定もスナップ保存）
-// ------------------------
-addLogBtn?.addEventListener("click", () => {
-  const issue = safeText(logIssue?.value || "");
-  if (!issue) return alert("論点（issue）を入力してください");
-
-  const data = loadData();
-  const p = data.projects[data.currentProjectId];
-
-  const element = logElement?.value || "全体";
-  const category = logCategory?.value || "ethics";
-  const status = logStatus?.value || "needs_review";
-  const decision = logDecision?.value || "要確認";
-  const rationale = safeText(logRationale?.value || "");
-
-  // ✅ 期間：現在UIに入っている期間をログへ保存
-  const periods = getDateRangesFromUI();
-
-  // 添付
-  const attUrl = safeText(logAttachUrl?.value || "");
-  const attMemo = safeText(logAttachMemo?.value || "");
-  const attachments = [];
-  if (attUrl) attachments.push({ url: attUrl, memo: attMemo || "添付" });
-
-  const severity = estimateSeverity(element, category, issue);
-
-  // ✅ フィルタ（検索語）もスナップとして保存（要求の「検索〜を1つのログに保存」対応）
-  const filterSnapshot = {
-    q: safeText(f_q?.value || ""),
-    element, category, status,
-    periods: periods.map(x => ({ from: x.from || "", to: x.to || "" }))
-  };
-
-  p.logs.unshift({
-    id: uid(),
-    at: nowISO(),
-    element,
-    category,
-    issue,
-    decision,
-    rationale,
-    status,
-    severity,
-    periods,
-    attachments,
-    filterSnapshot
+    webRisksList?.prepend(box);
+    if (webQuery) webQuery.value = "";
   });
 
-  saveData(data);
+  // 入力クリア
+  clearBtn?.addEventListener("click", () => {
+    if (inputText) inputText.value = "";
+    if (issuesList) issuesList.innerHTML = "";
+    if (questionsList) questionsList.innerHTML = "";
+    if (actionsList) actionsList.innerHTML = "";
+    if (tasksList) tasksList.innerHTML = "";
+    renderWebRisks("");
+  });
 
-  // 入力欄クリア（共通設定は維持）
-  if (logIssue) logIssue.value = "";
-  if (logRationale) logRationale.value = "";
-  if (logAttachUrl) logAttachUrl.value = "";
-  if (logAttachMemo) logAttachMemo.value = "";
+  // 案件作成
+  createProjectBtn?.addEventListener("click", () => {
+    const title = trim(projectTitle?.value || "");
+    if (!title) return alert("案件名を入力してください");
 
-  renderAll();
-});
+    const data = loadData();
+    const id = uid();
+    data.projects[id] = { id, title, logs: [], tasks: [] };
+    data.currentProjectId = id;
+    saveData(data);
 
-clearLogsBtn?.addEventListener("click", () => {
-  if (!confirm("この案件のログを全削除しますか？")) return;
-  const data = loadData();
-  data.projects[data.currentProjectId].logs = [];
-  saveData(data);
-  renderAll();
-});
+    if (projectTitle) projectTitle.value = "";
+    renderAll();
+  });
 
-// ✅ ⑤フィルタ：検索・要素・カテゴリ・ステータス・期間の変更で即反映
-[f_q, logElement, logCategory, logStatus].forEach((el) => {
-  el?.addEventListener("input", renderAll);
-  el?.addEventListener("change", renderAll);
-});
+  // 案件切替
+  projectSelect?.addEventListener("change", () => {
+    const data = loadData();
+    data.currentProjectId = projectSelect.value;
+    saveData(data);
+    renderAll();
+  });
 
-// periods add
-btnAddDateRow?.addEventListener("click", () => {
-  addDateRow("", "");
-  renderAll();
-});
+  // 案件削除
+  deleteProjectBtn?.addEventListener("click", () => {
+    const data = loadData();
+    const id = data.currentProjectId;
+    const keys = Object.keys(data.projects);
 
-// 初期行にイベント付与
-if (dateRows) {
-  const first = dateRows.querySelector(".dateRow");
-  if (first) attachDateRowEvents(first);
-}
+    if (keys.length <= 1) return alert("最後の案件は削除できません");
+    if (!confirm("この案件を削除しますか？（ログも消えます）")) return;
 
-// フィルタ解除（共通設定は初期値へ、ログ本文は消さない）
-f_reset?.addEventListener("click", () => {
-  if (f_q) f_q.value = "";
-  if (logElement) logElement.value = "脚本";
-  if (logCategory) logCategory.value = "copyright";
-  if (logStatus) logStatus.value = "needs_review";
+    delete data.projects[id];
+    data.currentProjectId = Object.keys(data.projects)[0];
+    saveData(data);
+    renderAll();
+  });
 
-  if (dateRows) {
-    dateRows.innerHTML = "";
+  // テンプレ反映
+  btnApplyTemplate?.addEventListener("click", () => {
+    const t = buildTemplateText();
+    const cur = inputText?.value || "";
+    if (inputText) inputText.value = cur ? `${t}\n\n${cur}` : t;
+    renderWebRisks(inputText?.value || "");
+  });
+
+  // テンプレリセット
+  btnResetTemplate?.addEventListener("click", () => {
+    [
+      "t_stream","t_archive","t_existing_music","t_recorded_music",
+      "t_minors","t_backstage","t_strobe","t_real_event"
+    ].forEach((id) => {
+      const el = tpl(id);
+      if (el) el.checked = false;
+    });
+  });
+
+  // 期間追加
+  btnAddDateRow?.addEventListener("click", () => {
     addDateRow("", "");
+    renderAll();
+  });
+
+  // 初期行イベント
+  if (dateRows) {
+    const first = dateRows.querySelector(".dateRow");
+    if (first) attachDateRowEvents(first);
   }
 
-  renderAll();
-});
+  // フィルタ解除
+  f_reset?.addEventListener("click", () => {
+    if (f_q) f_q.value = "";
+    if (useEcsFilter) useEcsFilter.checked = false;
 
-// init
-renderAll();
-renderWebRisks(inputText?.value || "");
+    // 共通設定は初期化（ログ本文は消さない）
+    if (logElement) logElement.value = "脚本";
+    if (logCategory) logCategory.value = "copyright";
+    if (logStatus) logStatus.value = "needs_review";
+
+    if (dateRows) {
+      dateRows.innerHTML = "";
+      addDateRow("", "");
+    }
+    renderAll();
+  });
+
+  // フィルタ即反映
+  [f_q, useEcsFilter, logElement, logCategory, logStatus].forEach((el) => {
+    el?.addEventListener("input", renderAll);
+    el?.addEventListener("change", renderAll);
+  });
+
+  // ✅ ログ追加（ここが本題：必ず追加できるように）
+  addLogBtn?.addEventListener("click", () => {
+    try {
+      const issue = trim(logIssue?.value || "");
+      if (!issue) {
+        alert("論点（issue）を入力してください");
+        return;
+      }
+
+      const data = loadData();
+      const p = data.projects[data.currentProjectId];
+
+      const element = logElement?.value || "全体";
+      const category = logCategory?.value || "ethics";
+      const status = logStatus?.value || "needs_review";
+      const decision = logDecision?.value || "要確認";
+      const rationale = trim(logRationale?.value || "");
+
+      const periods = getDateRangesFromUI();
+
+      const attUrl = trim(logAttachUrl?.value || "");
+      const attMemo = trim(logAttachMemo?.value || "");
+      const attachments = [];
+      if (attUrl) attachments.push({ url: attUrl, memo: attMemo || "添付" });
+
+      const severity = estimateSeverity(element, category, issue);
+
+      // 保存
+      p.logs.unshift({
+        id: uid(),
+        at: nowISO(),
+        element,
+        category,
+        issue,
+        decision,
+        rationale,
+        status,
+        severity,
+        periods,
+        attachments
+      });
+
+      saveData(data);
+
+      // 入力欄クリア
+      if (logIssue) logIssue.value = "";
+      if (logRationale) logRationale.value = "";
+      if (logAttachUrl) logAttachUrl.value = "";
+      if (logAttachMemo) logAttachMemo.value = "";
+
+      if (logAddResult) {
+        logAddResult.textContent = `✅ ログを追加しました（${new Date().toLocaleString()}）`;
+      }
+
+      // 追加したら必ず見えるように：検索文字だけ空にして再描画
+      if (f_q) f_q.value = "";
+      renderAll();
+
+      // 一番下へ
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    } catch (e) {
+      console.error(e);
+      alert("ログ追加でエラーが発生しました。コンソールを確認してください。");
+    }
+  });
+
+  // ログ全削除
+  clearLogsBtn?.addEventListener("click", () => {
+    if (!confirm("この案件のログを全削除しますか？")) return;
+    const data = loadData();
+    data.projects[data.currentProjectId].logs = [];
+    saveData(data);
+    renderAll();
+  });
+}
+
+// ---------- init ----------
+document.addEventListener("DOMContentLoaded", () => {
+  bindDom();
+  setupEvents();
+  renderAll();
+  renderWebRisks(inputText?.value || "");
+});
