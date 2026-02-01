@@ -1,11 +1,13 @@
+
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>権利処理・管理システム (GitHub Pages)</title>
-  <link rel="stylesheet" href="style.css?v=20260202">
+  <title>権利処理・管理システム</title>
+  <link rel="stylesheet" href="style.css?v=20260201-merge1">
 </head>
+
 <body>
   <header class="wrap">
     <h1>権利処理・管理システム</h1>
@@ -13,45 +15,30 @@
   </header>
 
   <main class="wrap grid">
-    <!-- ダッシュボード -->
+    <!-- 左：入力 + 解析 -->
     <section class="card">
-      <h2 style="margin-top:12px;">案件ダッシュボード</h2>
-      <div class="dash">
-        <div class="kpi"><div class="k">要確認</div><div class="v" id="kpiNeeds">0</div></div>
-        <div class="kpi"><div class="k">対応中</div><div class="v" id="kpiDoing">0</div></div>
-        <div class="kpi"><div class="k">完了</div><div class="v" id="kpiDone">0</div></div>
-      </div>
 
-      <div class="progressWrap">
-        <div class="progressLabel">進捗（完了率）: <span id="progressPct">0%</span></div>
-        <div class="progressBar"><div id="progressFill" class="progressFill" style="width:0%"></div></div>
-      </div>
-
-      <hr />
-
-      <!-- ✅ 入力テンプレ -->
+      <!-- ✅ 追加：入力テンプレ（チェック式） -->
       <h2>入力テンプレ（チェック式）</h2>
+
       <div class="grid2">
         <label class="check"><input type="checkbox" id="t_stream"> 配信あり（ライブ）</label>
         <label class="check"><input type="checkbox" id="t_archive"> アーカイブ公開あり</label>
 
-        <label class="check"><input type="checkbox" id="t_existing_music"> 既存曲を使う（BGM/歌）</label>
-        <label class="check"><input type="checkbox" id="t_recorded_music"> 音源（録音）を流す</label>
+        <label class="check"><input type="checkbox" id="t_art"> 美術素材を使用</label>
+        <label class="check"><input type="checkbox" id="t_costume"> 衣装に既製品/ロゴあり</label>
 
-        <label class="check"><input type="checkbox" id="t_art"> 美術素材を使用（写真/素材）</label>
-        <label class="check"><input type="checkbox" id="t_costume"> 衣装に既製品/ロゴがある</label>
-
-        <label class="check"><input type="checkbox" id="t_sns"> SNS告知（画像/動画）あり</label>
+        <label class="check"><input type="checkbox" id="t_sns"> SNS告知あり</label>
         <label class="check"><input type="checkbox" id="t_minors"> 未成年出演あり</label>
 
-        <label class="check"><input type="checkbox" id="t_backstage"> 舞台裏/楽屋を撮影する可能性</label>
-        <label class="check"><input type="checkbox" id="t_strobe"> ストロボ/点滅照明あり</label>
+        <label class="check"><input type="checkbox" id="t_backstage"> 楽屋/舞台裏を撮影</label>
+        <label class="check"><input type="checkbox" id="t_strobe"> ストロボ照明あり</label>
 
-        <label class="check"><input type="checkbox" id="t_real_event"> 実在事件/災害が題材</label>
+        <label class="check"><input type="checkbox" id="t_real_event"> 実在事件を題材</label>
       </div>
 
-      <label style="margin-top:10px;">補足メモ（任意）</label>
-      <input id="t_extra" placeholder="例：客席は映さない、ロゴは隠す、素材は自作のみ など" />
+      <label style="margin-top:10px;">補足メモ</label>
+      <input id="t_extra" placeholder="例：客席は映さない、ロゴは隠す予定 など">
 
       <div class="row">
         <button type="button" class="success" id="btnApplyTemplate">テンプレを入力欄に反映</button>
@@ -59,14 +46,13 @@
       </div>
 
       <div class="hint">
-        ※チェック内容からメモ文を自動生成して、台本/演出メモ欄へ追記します。
+        ※チェック内容から台本メモを自動生成します
       </div>
-    </section>
 
-    <!-- 入力→解析 -->
-    <section class="card">
-      <h2>① 台本 / 演出メモ（入力）</h2>
-      <textarea id="inputText" placeholder="例：この公演は配信します。既存曲をBGMで使います。実在の事件を題材にします。"></textarea>
+      <hr style="margin-top:14px;" />
+
+      <h2>① 台本 / 演出メモ（自由記述）</h2>
+      <textarea id="inputText" placeholder="例：SNS告知画像を作る。舞台美術にロゴを入れたい。衣装は既製品改造。配信あり。"></textarea>
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
@@ -77,12 +63,12 @@
       <ul id="issuesList" class="issues"></ul>
 
       <details style="margin-top:12px;">
-        <summary>不足情報の確認質問（AI補助：ルール）</summary>
+        <summary>不足情報の確認質問（ルール）</summary>
         <ul id="questionsList" class="bullets"></ul>
       </details>
 
       <details style="margin-top:10px;">
-        <summary>対応案テンプレ（AI補助：ルール）</summary>
+        <summary>対応案テンプレ（ルール）</summary>
         <ul id="actionsList" class="bullets"></ul>
       </details>
 
@@ -91,14 +77,20 @@
         <ul id="tasksList" class="bullets"></ul>
       </details>
 
+      <hr style="margin-top:14px;" />
+
+      <h3>③ 自由記述からのリスク候補（Webで根拠確認）</h3>
       <div class="hint">
-        ※AIではなく「ルールベース」で材料を出します（後からLLMに差し替え可能）。
+        ※静的サイトでは他サイト本文の自動取得が難しいため、まず検索リンクを出します。<br>
+        ※見つけたURLは「添付URLに反映」でログ欄へ入れられます。
       </div>
+      <div id="webRisksList" class="webrisk"></div>
+      <div id="webRisksError" class="errorBox" style="display:none;"></div>
     </section>
 
-    <!-- 案件＋ログ -->
-    <section class="card" style="grid-column:1/-1;">
-      <h2>③ 案件（Project）</h2>
+    <!-- 右：案件 + ログ（フィルタ合体） -->
+    <section class="card">
+      <h2>④ 案件（Project）</h2>
 
       <div class="row">
         <input id="projectTitle" class="grow" placeholder="案件名（例：本番公演A）" />
@@ -112,9 +104,9 @@
 
       <hr />
 
-      <h2>④ ログ（合意形成ログ）</h2>
+      <h2>⑤ ログ（合意形成ログ）</h2>
 
-      <!-- フィルタ -->
+      <!-- ✅ ここが「合体」：フィルタもログに保存できる -->
       <div class="filters">
         <div class="grid4">
           <div>
@@ -126,7 +118,7 @@
             <select id="f_element">
               <option value="">すべて</option>
               <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-              <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
+              <option>映像</option><option>全体</option>
             </select>
           </div>
           <div>
@@ -137,7 +129,10 @@
               <option value="privacy">プライバシー</option>
               <option value="ethics">倫理</option>
               <option value="safety">安全</option>
-              <option value="bias">バイアス</option>
+              <option value="bias">偏り</option>
+              <option value="art">美術</option>
+              <option value="costume">衣装</option>
+              <option value="sns">SNS</option>
             </select>
           </div>
           <div>
@@ -151,40 +146,43 @@
           </div>
         </div>
 
-        <div class="grid4" style="margin-top:10px;">
-          <div style="grid-column:1/-1;">
-            <label>期間（複数追加できます）</label>
+        <div style="margin-top:10px;">
+          <label>期間（複数追加できます）</label>
 
-            <div id="dateRows" class="dateRows">
-              <div class="dateRow">
-                <input class="f_from" type="date" />
-                <span class="dateSep">〜</span>
-                <input class="f_to" type="date" />
-                <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
-              </div>
-            </div>
-
-            <div class="row" style="margin-top:10px;">
-              <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
-              <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
-            </div>
-
-            <div class="hint" style="margin-top:6px;">
-              ※複数期間は「どれか1つでも一致（OR）」で絞り込みます。
+          <div id="dateRows" class="dateRows">
+            <div class="dateRow">
+              <input class="f_from" type="date" />
+              <span class="dateSep">〜</span>
+              <input class="f_to" type="date" />
+              <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
             </div>
           </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
+            <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
+          </div>
+
+          <div class="hint">※複数期間は「どれか1つでも一致（OR）」で絞り込みます。</div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <label class="check">
+            <input type="checkbox" id="saveFiltersWithLog" checked />
+            このログに「現在のフィルタ（検索/要素/カテゴリ/ステータス/期間）」を保存する
+          </label>
         </div>
       </div>
 
       <hr />
 
-      <!-- 追加フォーム -->
+      <!-- ログ入力 -->
       <div class="grid2">
         <div>
           <label>要素</label>
           <select id="logElement">
             <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-            <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
+            <option>映像</option><option>全体</option>
           </select>
         </div>
         <div>
@@ -194,7 +192,10 @@
             <option value="privacy">プライバシー</option>
             <option value="ethics">倫理</option>
             <option value="safety">安全</option>
-            <option value="bias">バイアス</option>
+            <option value="bias">偏り</option>
+            <option value="art">美術</option>
+            <option value="costume">衣装</option>
+            <option value="sns">SNS</option>
           </select>
         </div>
       </div>
@@ -233,7 +234,7 @@
         </div>
         <div>
           <label>添付メモ（任意）</label>
-          <input id="logAttachMemo" placeholder="例：引用要件の解説、利用規約、素材ライセンス など" />
+          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、素材ライセンスなど" />
         </div>
       </div>
 
@@ -245,16 +246,14 @@
       <h3 style="margin-top:14px;">ログ一覧</h3>
       <div id="logsTable" class="table"></div>
 
-      <div class="hint">
-        ※保存先はブラウザ内（LocalStorage）です。別PC・別ブラウザでは共有されません。
-      </div>
+      <div class="hint">※保存先はブラウザ内（LocalStorage）です。</div>
     </section>
   </main>
 
   <footer class="wrap foot">
-    <small>© Stage Ethics Demo / GitHub Pages only</small>
+    <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202"></script>
+  <script src="app.js?v=20260201-merge1"></script>
 </body>
 </html>
