@@ -6,7 +6,7 @@
   <title>権利処理・管理システム</title>
 
   <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-3">
+  <link rel="stylesheet" href="style.css?v=20260202-5">
 </head>
 <body>
   <header class="wrap">
@@ -60,7 +60,6 @@
 
       <div class="row">
         <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
-        <!-- ✅ 赤 -->
         <button type="button" class="ghost danger" id="btnResetTemplate">テンプレをリセット</button>
       </div>
 
@@ -74,7 +73,6 @@
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
-        <!-- ✅ 赤 -->
         <button type="button" class="ghost danger" id="clearBtn">入力を消す</button>
       </div>
 
@@ -119,7 +117,6 @@
 
       <div class="row">
         <select id="projectSelect" class="grow"></select>
-        <!-- ✅ 赤 -->
         <button type="button" class="ghost danger" id="deleteProjectBtn">案件削除</button>
       </div>
 
@@ -138,18 +135,21 @@
             <select id="f_element">
               <option value="">すべて</option>
               <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-              <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
+              <option>映像</option><option>全体</option>
             </select>
           </div>
           <div>
             <label>カテゴリ</label>
             <select id="f_category">
               <option value="">すべて</option>
-              <option value="copyright">copyright</option>
-              <option value="privacy">privacy</option>
-              <option value="ethics">ethics</option>
-              <option value="safety">safety</option>
-              <option value="bias">bias</option>
+              <option value="copyright">著作権</option>
+              <option value="privacy">プライバシー</option>
+              <option value="ethics">倫理</option>
+              <option value="safety">安全</option>
+              <option value="bias">偏り</option>
+              <option value="art">美術</option>
+              <option value="costume">衣装</option>
+              <option value="sns">SNS</option>
             </select>
           </div>
           <div>
@@ -178,7 +178,6 @@
 
             <div class="row" style="margin-top:10px;">
               <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
-              <!-- ✅ 赤 -->
               <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
             </div>
 
@@ -189,14 +188,6 @@
             <input id="f_to" type="date" style="display:none" />
           </div>
         </div>
-
-        <!-- ✅ NEW: フィルタ＋ログ入力を1つのログとして保存するスイッチ -->
-        <div class="row" style="margin-top:10px;">
-          <label class="check">
-            <input type="checkbox" id="saveFiltersWithLog" checked />
-            ログ追加時に「検索/要素/カテゴリ/ステータス/期間（複数）」も一緒に保存する
-          </label>
-        </div>
       </div>
 
       <hr />
@@ -206,17 +197,20 @@
           <label>要素</label>
           <select id="logElement">
             <option>脚本</option><option>演出</option><option>音楽</option><option>照明</option>
-            <option>美術</option><option>衣装</option><option>映像</option><option>SNS</option><option>全体</option>
+            <option>映像</option><option>全体</option>
           </select>
         </div>
         <div>
           <label>カテゴリ</label>
           <select id="logCategory">
-            <option value="copyright">copyright</option>
-            <option value="privacy">privacy</option>
-            <option value="ethics">ethics</option>
-            <option value="safety">safety</option>
-            <option value="bias">bias</option>
+            <option value="copyright">著作権</option>
+            <option value="privacy">プライバシー</option>
+            <option value="ethics">倫理</option>
+            <option value="safety">安全</option>
+            <option value="bias">偏り</option>
+            <option value="art">美術</option>
+            <option value="costume">衣装</option>
+            <option value="sns">SNS</option>
           </select>
         </div>
       </div>
@@ -255,13 +249,12 @@
         </div>
         <div>
           <label>添付メモ（任意）</label>
-          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、フォント利用条件 など" />
+          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、素材ライセンス など" />
         </div>
       </div>
 
       <div class="row" style="margin-top:12px;">
         <button type="button" class="success" id="addLogBtn">ログ追加</button>
-        <!-- ✅ 赤 -->
         <button type="button" class="ghost danger" id="clearLogsBtn">ログ全削除</button>
       </div>
 
@@ -276,6 +269,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202-3"></script>
+  <script src="app.js?v=20260202-5"></script>
 </body>
 </html>
