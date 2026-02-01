@@ -6,7 +6,7 @@
   <title>権利処理・管理システム</title>
 
   <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-3">
+  <link rel="stylesheet" href="style.css?v=20260202-6">
 </head>
 <body>
   <header class="wrap">
@@ -55,21 +55,18 @@
         <label class="check"><input type="checkbox" id="t_real_event"> 実在事件/災害が題材</label>
       </div>
 
-      <label style="margin-top:10px;">撮影範囲（任意）</label>
-      <input id="t_shoot_range" placeholder="例：客席は映さない、舞台上のみ、終演後の挨拶だけ など" />
-
       <div class="row">
         <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
         <button type="button" class="ghost danger" id="btnResetTemplate">テンプレをリセット</button>
       </div>
 
-      <div class="hint">※テンプレは抜け漏れ防止です。必要なら自由に追記してください。</div>
+      <div class="hint">※テンプレは抜け漏れ防止です。必要なら自由記述に追記してください。</div>
     </section>
 
-    <!-- 右：入力→解析 -->
+    <!-- 右：入力→解析 + 根拠確認 -->
     <section class="card">
       <h2>① 台本 / 演出メモ（自由記述）</h2>
-      <textarea id="inputText" placeholder="例：SNSで告知画像を使う。衣装は既製品を改造。舞台美術に有名キャラのロゴを入れたい。"></textarea>
+      <textarea id="inputText" placeholder="例：SNSで告知画像を使う。衣装は既製品を改造。舞台美術に有名キャラのロゴを入れたい。演出メモ：客席の映り込みは避ける。"></textarea>
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
@@ -96,10 +93,21 @@
 
       <hr style="margin-top:14px;" />
 
-      <h3>③ 自由記述からのリスク候補（Webで根拠確認）</h3>
+      <h3>③ 根拠確認（Web検索リンク）</h3>
       <div class="hint">
-        ※静的サイトでは他サイト本文を直接取得できないため、まず検索リンクを出します。<br>
-        ※見つけたURLは「添付URLに反映」でログ欄の添付URLへ入ります。
+        ※静的サイトでは他サイト本文を直接取得できないため、検索リンクを提示します。<br>
+        ※自由記述（台本/演出メモ）を入力すると自動で候補が更新されます。<br>
+        ※「添付URLに反映」でログ欄の添付URLへ入ります。
+      </div>
+
+      <!-- ✅ デフォルトで出てくる検索欄 -->
+      <div class="webSearchBox">
+        <label>追加で検索したいキーワード（任意）</label>
+        <div class="row">
+          <input id="webQuery" class="grow" placeholder="例：舞台 配信 公衆送信権 / 舞台 衣装 ロゴ 商標 / SNS 告知 画像 フォント 著作権" />
+          <button type="button" class="success" id="btnWebSearch">検索リンクを追加</button>
+        </div>
+        <div class="hint">※ここで追加した検索も、根拠確認リストに追加されます。</div>
       </div>
 
       <div id="webRisksList" class="webrisk"></div>
@@ -263,6 +271,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202-3"></script>
+  <script src="app.js?v=20260202-6"></script>
 </body>
 </html>
