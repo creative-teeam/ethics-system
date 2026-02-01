@@ -1,4 +1,7 @@
-// app.js（LocalStorage版：HTML一致 / テンプレ(撮影範囲含む) + 自由記述解析 + Web検索リンク + 美術/衣装/SNS対応）
+// app.js（完全版）
+// - 根拠確認（Web検索リンク）をデフォルト表示 & 入力中に自動更新
+// - 撮影範囲欄を削除（t_shoot_rangeなし）
+// - 自由記述（台本/演出メモ）でも根拠確認の候補が出る
 const STORE_KEY = "stageEthicsData_v1";
 
 // --- DOM ---
@@ -56,6 +59,10 @@ const progressFill = document.getElementById("progressFill");
 const webRisksList = document.getElementById("webRisksList");
 const webRisksError = document.getElementById("webRisksError");
 
+// ✅ 追加検索欄
+const webQuery = document.getElementById("webQuery");
+const btnWebSearch = document.getElementById("btnWebSearch");
+
 // --- utils ---
 function uid() {
   return crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
@@ -76,13 +83,12 @@ function safeText(s) {
 }
 
 // --- Data model ---
-// data = { schemaVersion, currentProjectId, projects: { [id]: { id, title, logs: [], tasks: [] } } }
 function loadData() {
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const firstId = uid();
     const init = {
-      schemaVersion: "2.3.0",
+      schemaVersion: "2.4.0",
       currentProjectId: firstId,
       projects: { [firstId]: { id: firstId, title: "デモ案件", logs: [], tasks: [] } }
     };
@@ -124,7 +130,7 @@ function migrateIfNeeded(data) {
     });
   });
 
-  data.schemaVersion = "2.3.0";
+  data.schemaVersion = "2.4.0";
   return data;
 }
 
@@ -135,12 +141,11 @@ function estimateSeverity(element, category, issueText) {
   if (category === "privacy" && (t.includes("未成年") || t.includes("楽屋") || t.includes("個人") || t.includes("顔"))) return "high";
   if (category === "copyright" && (t.includes("配信") || t.includes("録画") || t.includes("既存曲") || t.includes("ロゴ") || t.includes("キャラ") || t.includes("写真") || t.includes("フォント"))) return "medium";
   if (category === "ethics" && (t.includes("実在") || t.includes("事件") || t.includes("災害"))) return "medium";
-  // 美術/衣装/SNSも中〜低で
   if (element === "美術" || element === "衣装" || element === "SNS") return "medium";
   return "low";
 }
 
-// --- Rule-based issue extractor (no AI) ---
+// --- Rule-based issue extractor ---
 function extractIssues(text) {
   const raw = text || "";
   const t = raw.toLowerCase();
@@ -173,13 +178,18 @@ function extractIssues(text) {
     add("全体", "privacy", "未成年出演がある場合、同意書（保護者含む）・公開範囲・撮影可否の取り扱いを明確化してください。");
   }
 
-  // ✅ SNS（要素：SNS）
-  if (raw.includes("SNS") || t.includes("sns") || raw.includes("告知") || t.includes("x") || t.includes("twitter") || t.includes("instagram") || t.includes("tiktok")) {
+  // ✅ 演出メモ（自由記述）も拾う：演出/演出メモ/メモ
+  if (raw.includes("演出") || raw.includes("演出メモ") || raw.includes("メモ")) {
+    add("演出", "ethics", "演出メモに『演出意図』『引用元』『模倣/参照関係』が含まれる場合、後で説明できるよう根拠（出所URL/書籍名/許諾）を残してください。");
+  }
+
+  // ✅ SNS
+  if (raw.includes("SNS") || t.includes("sns") || raw.includes("告知") || t.includes("twitter") || t.includes("instagram") || t.includes("tiktok") || t.includes("x")) {
     add("SNS", "privacy", "SNS告知で出演者の顔・実名・学校名などが特定されないよう配慮が必要です。未成年がいる場合は公開範囲の同意を分けて取ってください。");
     add("SNS", "copyright", "告知画像/動画で使う写真・フォント・ロゴ・キャラクター画像は権利確認が必要です（転載・スクショ利用に注意）。");
   }
 
-  // ✅ 美術（要素：美術）
+  // ✅ 美術
   if (raw.includes("美術") || raw.includes("小道具") || raw.includes("大道具") || raw.includes("背景") || raw.includes("パネル") || raw.includes("ポスター") || raw.includes("造形")) {
     add("美術", "copyright", "舞台美術（背景/小道具/パネル）に既存作品の図柄・写真・キャラクター・ロゴを取り込む場合は許諾や引用要件の検討が必要です。");
   }
@@ -187,17 +197,17 @@ function extractIssues(text) {
     add("美術", "copyright", "ロゴ/キャラクター/商標を美術や衣装に載せる場合、著作権だけでなく商標・ブランドガイドラインにも注意が必要です。");
   }
 
-  // ✅ 衣装（要素：衣装）
+  // ✅ 衣装
   if (raw.includes("衣装") || raw.includes("コス") || raw.includes("コスプレ") || raw.includes("既製品") || raw.includes("ブランド") || raw.includes("ユニフォーム")) {
     add("衣装", "copyright", "衣装に既製品のロゴ・柄・キャラ絵が入る場合、撮影/配信/告知に載ると権利問題になり得ます。露出する範囲・隠す対応を決めてください。");
   }
 
   // 何もない場合
   if (issues.length === 0) {
-    add("全体", "ethics", "顕著な論点は検出できませんでした。『配信有無』『素材の出所』『改変範囲（脚本/演出/美術/衣装/SNS）』などを追記すると精度が上がります。");
+    add("全体", "ethics", "顕著な論点は検出できませんでした。自由記述に「配信」「SNS」「美術」「衣装」などを追記すると精度が上がります。");
   }
 
-  // 重複除去（element+category+issue）
+  // 重複除去
   const uniq = [];
   const seen = new Set();
   for (const it of issues) {
@@ -217,7 +227,7 @@ function generateQuestions(text) {
   if (raw.includes("配信") || t.includes("youtube") || t.includes("tiktok")) {
     push("配信はライブのみ？アーカイブ（後日公開）もありますか？");
     push("配信の公開範囲（限定公開/有料/全公開）はどれですか？");
-    push("客席や未成年が映る可能性はありますか？撮影範囲は？");
+    push("客席や未成年が映る可能性はありますか？");
   }
   if (raw.includes("既存曲") || raw.includes("BGM") || raw.includes("カバー") || raw.includes("音源")) {
     push("既存曲は生演奏ですか？録音音源ですか？");
@@ -245,6 +255,9 @@ function generateQuestions(text) {
   if (raw.includes("衣装") || raw.includes("既製品") || raw.includes("ブランド") || raw.includes("コス")) {
     push("衣装のロゴや柄は撮影/配信/告知で見えますか？隠す対応はしますか？");
   }
+  if (raw.includes("演出") || raw.includes("演出メモ") || raw.includes("メモ")) {
+    push("演出メモの参照元（作品/画像/動画/演出例）の出所はありますか？URLや書籍名を残せますか？");
+  }
 
   if (!q.length) push("配信有無、素材の出所、改変範囲（脚本/演出/美術/衣装/SNS）を追記できますか？");
   return q;
@@ -262,7 +275,7 @@ function generateActionTemplates(issues) {
     }
     if (it.category === "privacy") {
       push("同意取得フロー（出演者/保護者/スタッフ/映り込み）を決める");
-      push("撮影範囲・公開範囲を掲示（会場/配信ページ/SNS）");
+      push("撮影可否・公開範囲を掲示（会場/配信ページ/SNS）");
     }
     if (it.category === "safety") {
       push("安全注意（点滅・音量・導線）を掲示し、代替観覧方法を用意");
@@ -272,7 +285,7 @@ function generateActionTemplates(issues) {
     }
   });
 
-  if (!out.length) out.push("今の情報だけでは対応案を出しにくいです。テンプレ入力で条件を埋めてください。");
+  if (!out.length) out.push("今の情報だけでは対応案を出しにくいです。自由記述で条件を埋めてください。");
   return out;
 }
 
@@ -288,7 +301,7 @@ function generateTasksFromIssues(issues) {
     }
     if (it.element === "映像") {
       add("配信/収録の公開範囲（限定/有料/全公開）を確定");
-      add("撮影範囲と掲示文を確定");
+      add("撮影可否の掲示文を確定");
     }
     if (it.element === "SNS") {
       add("SNS告知素材（写真/フォント/ロゴ）の出所を確認");
@@ -301,6 +314,9 @@ function generateTasksFromIssues(issues) {
     if (it.element === "衣装") {
       add("衣装のロゴ/柄の露出範囲を確認し、隠す対応を決める");
     }
+    if (it.element === "演出") {
+      add("演出メモの参照元（出所URL/書籍名/許諾）を残す");
+    }
     if (it.category === "privacy") {
       add("同意書フロー（出演者/保護者/スタッフ/映り込み）を確認");
     }
@@ -309,7 +325,6 @@ function generateTasksFromIssues(issues) {
   });
 
   if (!tasks.length) add("不足情報の確認（配信/素材出所/改変範囲）");
-  // 重複除去
   const uniq = [];
   const seen = new Set();
   for (const t of tasks) {
@@ -326,7 +341,6 @@ function attachDateRowEvents(rowEl) {
   delBtn?.addEventListener("click", () => {
     const rows = dateRows?.querySelectorAll(".dateRow") || [];
     if (rows.length <= 1) {
-      // 1行は残す：値だけ消す
       const fromEl = rowEl.querySelector(".f_from");
       const toEl = rowEl.querySelector(".f_to");
       if (fromEl) fromEl.value = "";
@@ -402,7 +416,6 @@ function applyLogFilters(logs) {
     if (f.element && l.element !== f.element) return false;
     if (f.category && l.category !== f.category) return false;
     if (f.status && l.status !== f.status) return false;
-
     if (!inAnyDateRanges(l.at, f.dateRanges)) return false;
 
     if (f.q) {
@@ -414,63 +427,75 @@ function applyLogFilters(logs) {
 }
 
 // ------------------------
-// Web検索リンク生成（静的サイト対応）
+// Web検索リンク生成（デフォルト表示対応）
 // ------------------------
 function buildSearchUrl(query) {
-  // Google検索（必要ならここを Bing に変えてOK）
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 
+function defaultWebItems() {
+  // ✅ 入力が空でも出る「デフォルト根拠確認」
+  return [
+    { title: "舞台上演と配信の権利処理", query: "舞台 上演 配信 許諾 公衆送信権 実演家 肖像権", memo: "配信/録画/公衆送信" },
+    { title: "SNS告知素材（画像・フォント・ロゴ）", query: "SNS 告知 画像 フォント ロゴ 著作権 引用 スクリーンショット", memo: "SNS素材/フォント/ロゴ" },
+    { title: "舞台美術（写真・ロゴ・キャラ）の扱い", query: "舞台 美術 ロゴ キャラクター 写真 著作権 商標", memo: "美術/ロゴ/キャラ" },
+    { title: "衣装（既製品・ブランド）の扱い", query: "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", memo: "衣装/ブランド/ロゴ" },
+    { title: "未成年・同意・撮影の配慮", query: "未成年 出演 同意書 撮影 公開範囲 SNS", memo: "未成年/同意/公開範囲" },
+  ].map((it) => ({ ...it, url: buildSearchUrl(it.query) }));
+}
+
 function buildWebRiskItems(text, issues) {
-  // 文章全体＋論点から検索クエリを作る
-  const base = safeText(text).slice(0, 120);
+  const raw = safeText(text);
   const items = [];
 
   const push = (title, query, memo) => {
-    items.push({
-      title,
-      query,
-      url: buildSearchUrl(query),
-      memo
-    });
+    items.push({ title, query, url: buildSearchUrl(query), memo });
   };
 
-  // テキストからざっくり
-  if (/sns|告知|twitter|instagram|tiktok|x/i.test(text)) {
-    push("SNS告知の権利・肖像・素材", "SNS 告知 画像 フォント ロゴ 著作権 肖像権", "SNS素材/肖像/規約の確認");
+  // ✅ 入力が空ならデフォルトを返す
+  if (!raw) return defaultWebItems();
+
+  // 入力内容から自動生成（自由記述＝台本＋演出メモ込み）
+  if (/sns|告知|twitter|instagram|tiktok|x/i.test(raw)) {
+    push("SNS告知の権利・肖像・素材", "SNS 告知 画像 フォント ロゴ 著作権 肖像権 利用規約", "SNS素材/肖像/規約");
   }
-  if (/(美術|小道具|大道具|背景|ロゴ|キャラ|キャラクター|商標)/.test(text)) {
-    push("舞台美術（ロゴ/キャラ/写真）の扱い", "舞台 美術 ロゴ キャラクター 写真 著作権 商標", "美術の図柄・ロゴ・写真の権利確認");
+  if (/(美術|小道具|大道具|背景|ロゴ|キャラ|キャラクター|商標)/.test(raw)) {
+    push("舞台美術（ロゴ/キャラ/写真）の扱い", "舞台 美術 ロゴ キャラクター 写真 著作権 商標 ブランドガイドライン", "美術の権利確認");
   }
-  if (/(衣装|既製品|ブランド|コス|コスプレ)/.test(text)) {
-    push("衣装（ロゴ/ブランド/柄）の扱い", "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", "衣装ロゴの露出と配信時の注意");
+  if (/(衣装|既製品|ブランド|コス|コスプレ|ユニフォーム)/.test(raw)) {
+    push("衣装（ロゴ/ブランド/柄）の扱い", "衣装 ロゴ ブランド 既製品 撮影 配信 著作権 商標", "衣装ロゴの露出");
   }
-  if (/(配信|収録|youtube|tiktok|アーカイブ)/i.test(text)) {
+  if (/(配信|収録|youtube|tiktok|アーカイブ)/i.test(raw)) {
     push("上演と配信の許諾差", "舞台 配信 許諾 上演 公衆送信権 実演家 肖像", "配信/録画の権利処理");
   }
-  if (/(既存曲|BGM|カバー|音源)/.test(text)) {
-    push("既存曲の上演/配信の違い", "既存曲 上演 配信 録画 許諾 JASRAC", "音楽の利用形態の整理");
+  if (/(既存曲|BGM|カバー|音源)/.test(raw)) {
+    push("既存曲の上演/配信の違い", "既存曲 上演 配信 録画 許諾 JASRAC", "音楽の利用形態");
+  }
+  if (/(未成年|保護者)/.test(raw)) {
+    push("未成年の同意・公開範囲", "未成年 出演 同意書 保護者 撮影 公開範囲", "未成年/同意");
+  }
+  if (/(演出|演出メモ|メモ|参考|参照|オマージュ|模倣)/.test(raw)) {
+    push("演出メモの参照元（出所・許諾・引用）", "演出 参照 元ネタ 引用 許諾 著作権 舞台", "演出メモ/参照元");
   }
 
-  // issuesからも補強（重複少なめ）
+  // issuesからも補強（上位のみ）
   issues.slice(0, 8).forEach((it) => {
     const q = `舞台 ${it.element} ${it.category} ${it.issue}`.slice(0, 160);
     push(`論点：${it.element}/${it.category}`, q, `根拠探し：${it.element}/${it.category}`);
   });
 
-  // baseがあるなら最後に総合
-  if (base) {
-    push("自由記述（全文）から総合検索", `舞台 著作権 肖像権 許諾 ${base}`, "自由記述の総合確認");
-  }
+  // 最後に総合
+  const clip = raw.slice(0, 120);
+  push("自由記述（全文）から総合検索", `舞台 著作権 肖像権 許諾 ${clip}`, "自由記述の総合確認");
 
-  // 重複URL/タイトル抑制
+  // 重複除去
   const uniq = [];
   const seen = new Set();
   for (const it of items) {
     const key = `${it.title}__${it.url}`;
     if (!seen.has(key)) { seen.add(key); uniq.push(it); }
   }
-  return uniq.slice(0, 12);
+  return uniq.slice(0, 14);
 }
 
 function renderWebRisks(text, issues) {
@@ -480,32 +505,26 @@ function renderWebRisks(text, issues) {
   webRisksList.innerHTML = "";
   const items = buildWebRiskItems(text, issues);
 
-  if (!items.length) {
-    webRisksList.innerHTML = `<div class="hint">検索リンクを作るための情報が少ないです。自由記述に「配信」「SNS」「美術」「衣装」などを追記してみてください。</div>`;
-    return;
-  }
-
   items.forEach((it) => {
     const box = document.createElement("div");
     box.className = "webriskItem";
     box.innerHTML = `
       <div class="webriskTop">
         <span class="webriskTitle">${escapeHtml(it.title)}</span>
-        <span class="tag">${escapeHtml(it.memo)}</span>
+        <span class="tag">${escapeHtml(it.memo || "")}</span>
       </div>
       <div style="margin-top:6px;">
         <a href="${escapeHtml(it.url)}" target="_blank" rel="noreferrer">検索を開く</a>
         <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${escapeHtml(it.query)}）</span>
       </div>
       <div class="row" style="margin-top:10px;">
-        <button type="button" class="success" data-apply-url="1" data-url="${escapeHtml(it.url)}" data-memo="${escapeHtml(it.memo)}">添付URLに反映</button>
+        <button type="button" class="success" data-apply-url="1" data-url="${escapeHtml(it.url)}" data-memo="${escapeHtml(it.memo || "")}">添付URLに反映</button>
       </div>
     `;
 
     box.querySelector("button[data-apply-url]")?.addEventListener("click", () => {
       if (logAttachUrl) logAttachUrl.value = it.url;
-      if (logAttachMemo) logAttachMemo.value = it.memo;
-      // ログ欄へスクロール（下の方）
+      if (logAttachMemo) logAttachMemo.value = it.memo || "";
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     });
 
@@ -649,7 +668,6 @@ function renderLogs(data) {
       <div class="cell"><button type="button" class="ghost danger" data-del="${escapeHtml(l.id)}">×</button></div>
     `;
 
-    // ステータス変更
     row.querySelector("select[data-st]")?.addEventListener("change", (e) => {
       const newStatus = e.target.value;
       const d = loadData();
@@ -660,7 +678,6 @@ function renderLogs(data) {
       renderAll();
     });
 
-    // 削除
     row.querySelector("button[data-del]")?.addEventListener("click", () => {
       if (!confirm("このログを削除しますか？")) return;
       const d = loadData();
@@ -698,7 +715,7 @@ function renderAll() {
 }
 
 // ------------------------
-// Template -> text（✅ 撮影範囲も反映）
+// Template -> text（✅ 撮影範囲なし）
 // ------------------------
 function buildTemplateText() {
   const checks = {
@@ -709,8 +726,7 @@ function buildTemplateText() {
     minors: tpl("t_minors")?.checked,
     backstage: tpl("t_backstage")?.checked,
     strobe: tpl("t_strobe")?.checked,
-    real_event: tpl("t_real_event")?.checked,
-    shoot_range: safeText(tpl("t_shoot_range")?.value || "")
+    real_event: tpl("t_real_event")?.checked
   };
 
   const lines = [];
@@ -723,9 +739,21 @@ function buildTemplateText() {
   if (checks.backstage) lines.push("・舞台裏/楽屋が映る可能性あり");
   if (checks.strobe) lines.push("・ストロボ/点滅照明あり");
   if (checks.real_event) lines.push("・実在事件/災害が題材");
-  if (checks.shoot_range) lines.push(`・撮影範囲：${checks.shoot_range}`);
   lines.push("【自由記述】");
   return lines.join("\n");
+}
+
+// ------------------------
+// ✅ 根拠確認を入力中に自動更新
+// ------------------------
+let webUpdateTimer = null;
+function scheduleWebUpdate() {
+  if (webUpdateTimer) clearTimeout(webUpdateTimer);
+  webUpdateTimer = setTimeout(() => {
+    const text = inputText?.value || "";
+    const issues = extractIssues(text);
+    renderWebRisks(text, issues);
+  }, 150);
 }
 
 // ------------------------
@@ -740,6 +768,8 @@ analyzeBtn?.addEventListener("click", () => {
 
   renderIssues(issues);
   renderMaterialOutputs(text, issues);
+
+  // ✅ 解析時も根拠確認を更新
   renderWebRisks(text, issues);
 
   // tasks（案件に貯める：重複回避）
@@ -753,14 +783,61 @@ analyzeBtn?.addEventListener("click", () => {
   renderAll();
 });
 
+// ✅ 入力中に根拠確認更新（自由記述＝演出メモ含む）
+inputText?.addEventListener("input", scheduleWebUpdate);
+
+// ✅ 追加検索欄：手動で検索リンクを追加
+btnWebSearch?.addEventListener("click", () => {
+  const q = safeText(webQuery?.value || "");
+  if (!q) return alert("キーワードを入力してください。");
+  const url = buildSearchUrl(q);
+
+  // 追加した検索を先頭に表示するため、仮のitems描画を上書き
+  const text = inputText?.value || "";
+  const issues = extractIssues(text);
+
+  // 既存リストを作り、先頭に追加
+  const items = buildWebRiskItems(text, issues);
+  items.unshift({ title: "手動追加検索", query: q, url, memo: "手動入力" });
+
+  if (webRisksList) {
+    webRisksList.innerHTML = "";
+    items.slice(0, 14).forEach((it) => {
+      const box = document.createElement("div");
+      box.className = "webriskItem";
+      box.innerHTML = `
+        <div class="webriskTop">
+          <span class="webriskTitle">${escapeHtml(it.title)}</span>
+          <span class="tag">${escapeHtml(it.memo || "")}</span>
+        </div>
+        <div style="margin-top:6px;">
+          <a href="${escapeHtml(it.url)}" target="_blank" rel="noreferrer">検索を開く</a>
+          <span style="color:#666; font-size:0.85rem; margin-left:8px;">（クエリ：${escapeHtml(it.query)}）</span>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" class="success" data-apply-url="1">添付URLに反映</button>
+        </div>
+      `;
+      box.querySelector("button[data-apply-url]")?.addEventListener("click", () => {
+        if (logAttachUrl) logAttachUrl.value = it.url;
+        if (logAttachMemo) logAttachMemo.value = it.memo || "";
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      });
+      webRisksList.appendChild(box);
+    });
+  }
+
+  if (webQuery) webQuery.value = "";
+});
+
 clearBtn?.addEventListener("click", () => {
   if (inputText) inputText.value = "";
   if (issuesList) issuesList.innerHTML = "";
   if (questionsList) questionsList.innerHTML = "";
   if (actionsList) actionsList.innerHTML = "";
   if (tasksList) tasksList.innerHTML = "";
-  if (webRisksList) webRisksList.innerHTML = "";
-  if (webRisksError) webRisksError.style.display = "none";
+  // ✅ 空でもデフォルト根拠確認を出す
+  renderWebRisks("", []);
 });
 
 // Projects
@@ -851,8 +928,10 @@ clearLogsBtn?.addEventListener("click", () => {
 btnApplyTemplate?.addEventListener("click", () => {
   const t = buildTemplateText();
   const cur = inputText?.value || "";
-  // ✅ テンプレ＋自由記述が両方動く（追記式）
   if (inputText) inputText.value = cur ? `${t}\n\n${cur}` : t;
+
+  // ✅ テンプレ反映した直後も根拠確認更新
+  scheduleWebUpdate();
 });
 
 btnResetTemplate?.addEventListener("click", () => {
@@ -863,8 +942,6 @@ btnResetTemplate?.addEventListener("click", () => {
     const el = tpl(id);
     if (el) el.checked = false;
   });
-  const r = tpl("t_shoot_range");
-  if (r) r.value = "";
 });
 
 // Filters
@@ -879,7 +956,7 @@ btnAddDateRow?.addEventListener("click", () => {
   renderAll();
 });
 
-// 初期行にイベント付与（HTML内の1行目）
+// 初期行にイベント付与
 if (dateRows) {
   const first = dateRows.querySelector(".dateRow");
   if (first) attachDateRowEvents(first);
@@ -892,7 +969,6 @@ f_reset?.addEventListener("click", () => {
   if (f_category) f_category.value = "";
   if (f_status) f_status.value = "";
 
-  // 期間（複数）もリセット：1行だけ残す
   if (dateRows) {
     dateRows.innerHTML = "";
     addDateRow("", "");
@@ -902,3 +978,6 @@ f_reset?.addEventListener("click", () => {
 
 // init
 renderAll();
+
+// ✅ ページ起動時点で根拠確認をデフォルト表示（入力が空でも出る）
+renderWebRisks(inputText?.value || "", extractIssues(inputText?.value || ""));
