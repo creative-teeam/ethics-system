@@ -14,7 +14,7 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff;   /* 淡い紫 */
+  background: #f3efff;
   color: #1a1a2e;
 }
 
@@ -140,7 +140,7 @@ button {
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
-  background: #4b5cff;   /* 通常ボタン（青） */
+  background: #4b5cff;
   color: #fff;
   transition: 0.2s;
 }
@@ -332,6 +332,17 @@ button.danger:hover,
 }
 
 .dateSep { color: #666; }
+
+/* ===============================
+   Web Search Box
+=============================== */
+.webSearchBox {
+  margin-top: 10px;
+  background: #f8f8ff;
+  border: 1px solid #e0e0ff;
+  border-radius: 10px;
+  padding: 12px;
+}
 
 /* ===============================
    Web risks
