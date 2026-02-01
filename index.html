@@ -4,10 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>権利処理・管理システム</title>
-
-  <!-- ✅ キャッシュ対策：更新のたびに数字を変える -->
-  <link rel="stylesheet" href="style.css?v=20260202-5">
+  <link rel="stylesheet" href="style.css?v=20260201-merge1">
 </head>
+
 <body>
   <header class="wrap">
     <h1>権利処理・管理システム</h1>
@@ -15,61 +14,10 @@
   </header>
 
   <main class="wrap grid">
-    <!-- 左：ダッシュボード + テンプレ -->
-    <section class="card">
-      <h2>案件ダッシュボード</h2>
-
-      <div class="dash">
-        <div class="kpi">
-          <div class="k">要確認</div>
-          <div class="v" id="kpiNeeds">0</div>
-        </div>
-        <div class="kpi">
-          <div class="k">対応中</div>
-          <div class="v" id="kpiDoing">0</div>
-        </div>
-        <div class="kpi">
-          <div class="k">完了</div>
-          <div class="v" id="kpiDone">0</div>
-        </div>
-      </div>
-
-      <div class="progressWrap">
-        <div class="progressLabel">進捗（完了率）: <span id="progressPct">0%</span></div>
-        <div class="progressBar">
-          <div id="progressFill" class="progressFill" style="width:0%"></div>
-        </div>
-      </div>
-
-      <hr />
-
-      <h2>入力テンプレ（チェック式）</h2>
-      <div class="grid2">
-        <label class="check"><input type="checkbox" id="t_stream"> 配信あり（ライブ）</label>
-        <label class="check"><input type="checkbox" id="t_archive"> アーカイブあり（後日公開）</label>
-        <label class="check"><input type="checkbox" id="t_existing_music"> 既存曲を使う（BGM/歌）</label>
-        <label class="check"><input type="checkbox" id="t_recorded_music"> 音源（録音）を流す</label>
-        <label class="check"><input type="checkbox" id="t_minors"> 未成年出演あり</label>
-        <label class="check"><input type="checkbox" id="t_backstage"> 舞台裏/楽屋を撮る可能性</label>
-        <label class="check"><input type="checkbox" id="t_strobe"> ストロボ/点滅照明あり</label>
-        <label class="check"><input type="checkbox" id="t_real_event"> 実在事件/災害が題材</label>
-      </div>
-
-      <label style="margin-top:10px;">撮影範囲（任意）</label>
-      <input id="t_shoot_range" placeholder="例：客席は映さない、舞台上のみ、終演後の挨拶だけ など" />
-
-      <div class="row">
-        <button type="button" id="btnApplyTemplate">テンプレを入力欄に反映</button>
-        <button type="button" class="ghost danger" id="btnResetTemplate">テンプレをリセット</button>
-      </div>
-
-      <div class="hint">※テンプレは抜け漏れ防止です。必要なら自由に追記してください。</div>
-    </section>
-
-    <!-- 右：入力→解析 -->
+    <!-- 左：入力 + 解析 -->
     <section class="card">
       <h2>① 台本 / 演出メモ（自由記述）</h2>
-      <textarea id="inputText" placeholder="例：SNSで告知画像を使う。衣装は既製品を改造。舞台美術に有名キャラのロゴを入れたい。"></textarea>
+      <textarea id="inputText" placeholder="例：SNS告知画像を作る。舞台美術にロゴを入れたい。衣装は既製品改造。配信あり。"></textarea>
 
       <div class="row">
         <button type="button" id="analyzeBtn">解析する</button>
@@ -98,16 +46,15 @@
 
       <h3>③ 自由記述からのリスク候補（Webで根拠確認）</h3>
       <div class="hint">
-        ※静的サイトでは他サイト本文を直接取得できないため、まず検索リンクを出します。<br>
-        ※見つけたURLは「添付URLに反映」でログ欄の添付URLへ入ります。
+        ※静的サイトでは他サイト本文の自動取得が難しいため、まず検索リンクを出します。<br>
+        ※見つけたURLは「添付URLに反映」でログ欄へ入れられます。
       </div>
-
       <div id="webRisksList" class="webrisk"></div>
       <div id="webRisksError" class="errorBox" style="display:none;"></div>
     </section>
 
-    <!-- 下：案件＋ログ -->
-    <section class="card" style="grid-column:1/-1;">
+    <!-- 右：案件 + ログ（フィルタ合体） -->
+    <section class="card">
       <h2>④ 案件（Project）</h2>
 
       <div class="row">
@@ -124,6 +71,7 @@
 
       <h2>⑤ ログ（合意形成ログ）</h2>
 
+      <!-- ✅ ここが「合体」：フィルタもログに保存できる -->
       <div class="filters">
         <div class="grid4">
           <div>
@@ -163,35 +111,37 @@
           </div>
         </div>
 
-        <div class="grid4" style="margin-top:10px;">
-          <div style="grid-column:1/-1;">
-            <label>期間（複数追加できます）</label>
+        <div style="margin-top:10px;">
+          <label>期間（複数追加できます）</label>
 
-            <div id="dateRows" class="dateRows">
-              <div class="dateRow">
-                <input class="f_from" type="date" />
-                <span class="dateSep">〜</span>
-                <input class="f_to" type="date" />
-                <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
-              </div>
+          <div id="dateRows" class="dateRows">
+            <div class="dateRow">
+              <input class="f_from" type="date" />
+              <span class="dateSep">〜</span>
+              <input class="f_to" type="date" />
+              <button type="button" class="ghost danger btnDelDate" title="この期間を削除">×</button>
             </div>
-
-            <div class="row" style="margin-top:10px;">
-              <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
-              <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
-            </div>
-
-            <div class="hint">※複数期間は「どれか1つでも一致（OR）」で絞り込みます。</div>
-
-            <!-- 互換用（非表示） -->
-            <input id="f_from" type="date" style="display:none" />
-            <input id="f_to" type="date" style="display:none" />
           </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button type="button" class="success" id="btnAddDateRow">＋期間を追加</button>
+            <button type="button" class="ghost danger" id="f_reset">フィルタ解除</button>
+          </div>
+
+          <div class="hint">※複数期間は「どれか1つでも一致（OR）」で絞り込みます。</div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <label class="check">
+            <input type="checkbox" id="saveFiltersWithLog" checked />
+            このログに「現在のフィルタ（検索/要素/カテゴリ/ステータス/期間）」を保存する
+          </label>
         </div>
       </div>
 
       <hr />
 
+      <!-- ログ入力 -->
       <div class="grid2">
         <div>
           <label>要素</label>
@@ -249,7 +199,7 @@
         </div>
         <div>
           <label>添付メモ（任意）</label>
-          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、素材ライセンス など" />
+          <input id="logAttachMemo" placeholder="例：引用要件の解説、SNS利用規約、素材ライセンスなど" />
         </div>
       </div>
 
@@ -269,6 +219,6 @@
     <small>© Stage Ethics Demo</small>
   </footer>
 
-  <script src="app.js?v=20260202-5"></script>
+  <script src="app.js?v=20260201-merge1"></script>
 </body>
 </html>
