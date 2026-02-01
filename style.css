@@ -14,7 +14,7 @@
 html, body {
   width: 100%;
   min-height: 100%;
-  background: #f3efff; /* 淡い紫 */
+  background: #f3efff !important;
   color: #1a1a2e;
 }
 
@@ -52,10 +52,16 @@ h1 {
   font-size: 0.95rem;
 }
 
-.foot {
+footer {
   text-align: center;
   margin-top: 40px;
   color: #666;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #e8e0ff;
+  margin: 14px 0;
 }
 
 /* ===============================
@@ -83,12 +89,6 @@ h3 {
   color: #33335a;
 }
 
-hr {
-  border: none;
-  border-top: 1px solid #e6e1ff;
-  margin: 14px 0;
-}
-
 /* ===============================
    Inputs
 =============================== */
@@ -96,7 +96,7 @@ input, textarea, select {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #cfcfe6;
+  border: 1px solid #ccc;
   font-size: 0.95rem;
   background: #fafaff;
   color: #111;
@@ -123,9 +123,7 @@ textarea::placeholder {
   flex-wrap: wrap;
 }
 
-.grow {
-  flex: 1;
-}
+.grow { flex: 1; }
 
 .grid2 {
   display: grid;
@@ -150,56 +148,59 @@ button {
   font-size: 0.9rem;
   background: #4b5cff;
   color: #fff;
-  transition: 0.15s;
+  transition: 0.2s;
 }
 
-button:hover {
-  opacity: 0.92;
-}
+button:hover { opacity: 0.92; }
 
-/* ghost = サブボタン */
 button.ghost {
   background: #eaeaff;
   color: #333;
   border: 1px solid #cfcfff;
 }
 
-/* ✅ success = 緑（＋期間を追加 / ログ追加 用） */
+/* ✅ success（緑） */
 button.success {
   background: #2ecc71;
   color: #fff;
 }
-button.success:hover {
-  background: #27ae60;
-}
+button.success:hover { background: #27ae60; }
 
-/* ✅ danger = 赤（削除・リセット系） */
+/* ✅ danger（赤） */
 button.danger {
-  background: #e74c3c !important;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+}
+button.danger:hover { background: #c0392b; }
+
+/* ✅ 強制色（色が変わらない対策） */
+#btnAddDateRow,
+#addLogBtn {
+  background: #2ecc71 !important;
   color: #fff !important;
   border: none !important;
 }
-button.danger:hover {
-  background: #c0392b !important;
+#btnAddDateRow:hover,
+#addLogBtn:hover {
+  background: #27ae60 !important;
 }
 
-/* ✅ ID指定でも赤に（取りこぼし防止） */
-#btnResetTemplate,
-#clearBtn,
 #deleteProjectBtn,
-#f_reset,
 #clearLogsBtn,
+#clearBtn,
+#btnResetTemplate,
+#f_reset,
 .btnDelDate {
   background: #e74c3c !important;
   color: #fff !important;
   border: none !important;
 }
-
-#btnResetTemplate:hover,
-#clearBtn:hover,
 #deleteProjectBtn:hover,
-#f_reset:hover,
 #clearLogsBtn:hover,
+#clearBtn:hover,
+#btnResetTemplate:hover,
+#f_reset:hover,
 .btnDelDate:hover {
   background: #c0392b !important;
 }
@@ -207,14 +208,8 @@ button.danger:hover {
 /* ===============================
    Progress
 =============================== */
-.progressWrap {
-  margin-top: 10px;
-}
-
-.progressLabel {
-  font-size: 0.9rem;
-  margin-bottom: 6px;
-}
+.progressWrap { margin-top: 10px; }
+.progressLabel { font-size: 0.9rem; margin-bottom: 6px; }
 
 .progressBar {
   width: 100%;
@@ -226,7 +221,7 @@ button.danger:hover {
 
 .progressFill {
   height: 100%;
-  background: #2ecc71; /* 緑 */
+  background: #2ecc71;
   transition: width 0.3s;
 }
 
@@ -245,19 +240,10 @@ button.danger:hover {
   border-radius: 10px;
   padding: 10px;
   text-align: center;
-  border: 1px solid #e6e1ff;
 }
 
-.kpi .k {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.kpi .v {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #333;
-}
+.kpi .k { font-size: 0.8rem; color: #666; }
+.kpi .v { font-size: 1.4rem; font-weight: bold; color: #333; }
 
 /* ===============================
    Tags
@@ -270,16 +256,12 @@ button.danger:hover {
   border-radius: 999px;
   font-size: 0.75rem;
   margin-right: 4px;
-  border: 1px solid #d7d7ff;
 }
 
 /* ===============================
    Lists
 =============================== */
-.issues {
-  list-style: none;
-  margin-top: 10px;
-}
+.issues { list-style: none; margin-top: 10px; }
 
 .issues li {
   background: #f8f8ff;
@@ -289,13 +271,8 @@ button.danger:hover {
   border: 1px solid #e0e0ff;
 }
 
-.bullets {
-  padding-left: 20px;
-}
-
-.bullets li {
-  margin-bottom: 6px;
-}
+.bullets { padding-left: 20px; }
+.bullets li { margin-bottom: 6px; }
 
 /* ===============================
    Tables (logs)
@@ -308,15 +285,11 @@ button.danger:hover {
 
 .rowh, .rowd {
   display: grid;
-  grid-template-columns: 1.3fr 2.2fr 0.9fr 0.9fr 1.2fr 0.5fr;
+  grid-template-columns: 1.2fr 2fr 1fr 1fr 1fr 0.5fr;
   gap: 6px;
-  align-items: start;
 }
 
-.rowh {
-  font-weight: bold;
-  color: #444;
-}
+.rowh { font-weight: bold; color: #444; }
 
 .rowd {
   background: #fafaff;
@@ -325,20 +298,7 @@ button.danger:hover {
   border: 1px solid #e0e0ff;
 }
 
-.cell {
-  font-size: 0.85rem;
-  color: #222;
-}
-
-.cell details {
-  margin-top: 6px;
-}
-
-.cell details summary {
-  cursor: pointer;
-  color: #4a4a7a;
-  font-size: 0.85rem;
-}
+.cell { font-size: 0.85rem; color: #222; }
 
 /* ===============================
    Filters
@@ -367,18 +327,10 @@ button.danger:hover {
   flex-wrap: wrap;
 }
 
-.dateRow .f_from,
-.dateRow .f_to {
-  width: auto;
-  min-width: 160px;
-}
-
-.dateSep {
-  color: #666;
-}
+.dateSep { color: #666; }
 
 /* ===============================
-   Web risk
+   Web Risk Panel
 =============================== */
 .webrisk {
   margin-top: 10px;
@@ -386,30 +338,58 @@ button.danger:hover {
   gap: 10px;
 }
 
-.webrisk .item {
-  background: #f8f8ff;
+.webriskCard {
   border: 1px solid #e0e0ff;
+  background: #fafaff;
   border-radius: 10px;
-  padding: 10px;
+  padding: 12px;
 }
 
-.webrisk .title {
+.webriskTitle {
   font-weight: 700;
+  color: #22224a;
   margin-bottom: 6px;
 }
 
-.webrisk a {
-  color: #2a4bd7;
-  text-decoration: underline;
+.webriskMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
+.webrisk a,
+.webrisk a:visited {
+  color: #1f49ff !important;
+  text-decoration: underline !important;
+  font-weight: 600;
+}
+
+.webriskActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.webriskActions input {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* ===============================
+   Error Box
+=============================== */
 .errorBox {
-  background: #fff0f0;
-  border: 1px solid #ffd0d0;
-  color: #9b1c1c;
+  margin-top: 10px;
   padding: 10px;
   border-radius: 10px;
-  margin-top: 10px;
+  background: #fff0f0;
+  border: 1px solid #ffb3b3;
+  color: #7a0000;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
 }
 
 /* ===============================
@@ -419,39 +399,14 @@ button.danger:hover {
   font-size: 0.8rem;
   color: #666;
   margin-top: 6px;
-  line-height: 1.4;
 }
 
-.check {
-  font-size: 0.9rem;
-  color: #333;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.check input[type="checkbox"] {
-  width: auto;
-}
+.check { font-size: 0.9rem; color: #333; }
 
 /* ===============================
    Responsive
 =============================== */
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rowh, .rowd {
-    grid-template-columns: 1fr;
-  }
-
-  .grid4 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .dateRow .f_from,
-  .dateRow .f_to {
-    min-width: 140px;
-  }
+  .grid { grid-template-columns: 1fr; }
+  .rowh, .rowd { grid-template-columns: 1fr; }
 }
